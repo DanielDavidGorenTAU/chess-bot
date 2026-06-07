@@ -2,7 +2,7 @@ import time
 from rtde_control import RTDEControlInterface
 from rtde_receive import RTDEReceiveInterface
 from robotiq_gripper import RobotiqGripper
-
+# test
 ROBOT_IP = "192.168.56.101"
 BASE_TCP_PORT = 63352
 X, Y, Z, RX, RY, RZ = 0,1,2,3,4,5
