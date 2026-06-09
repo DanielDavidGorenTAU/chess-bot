@@ -1,0 +1,36 @@
+import numpy as np
+
+לוודא יחידת מידה של מילימטרים או מטרים!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+def translate_camera_to_robot(camera_xyz, matrix_path="zed_to_robot_matrix.npy"):
+    """
+    מתרגמת נקודה תלת-ממדית מעולם המצלמה לעולם של הרובוט
+    camera_xyz: רשימה או מערך של [X, Y, Z] מהמצלמה (במטרים)
+    """
+    # 1. טעינת מטריצת הכיול מהקובץ
+    transformation_matrix = np.load(matrix_path)
+    
+    # 2. הפיכת הנקודה להומוגנית על ידי הוספת 1 בסוף
+    # [X, Y, Z] הופך ל- [X, Y, Z, 1.0]
+    point_camera_homogeneous = np.array([camera_xyz[0], camera_xyz[1], camera_xyz[2], 1.0])
+    
+    # 3. מכפילים את המטריצה בנקודה (כפל מטריצה בווקטור)
+    point_robot_homogeneous = np.dot(transformation_matrix, point_camera_homogeneous)
+    
+    # 4. חילוץ שלושת האיברים הראשונים בלבד (ה-X, Y, Z של הרובוט)
+    robot_x = point_robot_homogeneous[0]
+    robot_y = point_robot_homogeneous[1]
+    robot_z = point_robot_homogeneous[2]
+    
+    return [robot_x, robot_y, robot_z]
+
+# --- דוגמת שימוש בזמן אמת ---
+
+# נניח שחבר שלך דגם נקודה, והיא הגיעה אליך לקובץ ככה:
+point_from_zed = [0.12, -0.05, 0.65] # הכל במטרים!
+
+# מתרגמים לקואורדינטות של הרובוט
+robot_target = translate_camera_to_robot(point_from_zed)
+
+print(f"קואורדינטה מהמצלמה: {point_from_zed}")
+print(f"קואורדינטה לרובוט: {robot_target}")
