@@ -2,16 +2,23 @@ import cv2
 import numpy as np
 
 # הנקודות כפי שנמדדו מענן הנקודות של ה-ZED (במטרים)
-points_in_camera = np.array([ [x1,y1,z1], [x2,y2,z2], ... ], dtype=np.float32)
+points_in_camera = np.array([[0.186, 0.252, 0.786],[0.095, 0.254, 0.756],[0.123, 0.085, 0.991],
+    [0.160, 0.088, 1.003],[0.018, 0.215, 0.874],[0.035, 0.150, 0.927]], dtype=np.float32)
 
 # הנקודות כפי שנקראו מהרובוט (במטרים)
-points_in_robot = np.array([ [x1,y1,z1], [x2,y2,z2], ... ], dtype=np.float32)
+points_in_robot = np.array([[0.07403822032383311, -0.3939940291650029, 0.02654453100428729],[0.08402962108584439, -0.676097716024815, 0.02654453100428729],
+[-0.1980740657739677, -0.6860891167868267, 0.02654453100428729],[-0.20806546653597896, -0.4039854299270146, 0.02654453100428729],
+[-0.0008534612006782078, -0.5580508218740418, 0.02654453100428729],[-0.12032769831745321, -0.6026333774663056, 0.02654453100428729] ], dtype=np.float32)
 
 # חישוב המטריצה התלת-ממדית (מחזיר מטריצה של 3x4 וקטור אינדיקציה ל-Inliers)
 retval, affine_matrix, inliers = cv2.estimateAffine3D(points_in_camera, points_in_robot)
+print(retval)
+print(affine_matrix)
+print(inliers)
 
 # נהפוך אותה למטריצה ריבועית של 4x4 (מטריצה הומוגנית סטנדרטית) לנוחות עבודה
 transformation_matrix = np.vstack([affine_matrix, [0, 0, 0, 1]])
 
+print(transformation_matrix)
 # שמירה לקובץ - זה הקובץ הקבוע שלך!
-np.save("zed_to_robot_matrix.npy", transformation_matrix)
+#np.save("zed_to_robot_matrix.npy", transformation_matrix)
