@@ -13,63 +13,31 @@ ROBOT_IP = "192.168.56.101"
 BASE_TCP_PORT = 63352
 
 
-camera_points2 = np.array([[0.186, 0.058, 0.902], [-0.095, 0.054, 0.907], 
-                        [-0.091, -0.131, 1.123], [0.190, -0.126, 1.117], 
-                        [-0.051, -0.102, 1.090],[0.151, 0.004, 0.972 ], 
-                 [-0.005, -0.081, 1.085], [0.069, 0.035, 0.947], 
-                 [0.110, -0.075, 1.069], [0.029, -0.128, 1.116],
-                 [-0.277, 0.053, 0.943],[-0.205, 0.055, 0.942],
-                 [-0.163, 0.058, 0.931],[-0.203, 0.029, 0.975],
-                 [-0.237, 0.006, 0.995],[-0.239, -0.013, 1.019], 
-                 [-0.166, -0.042, 1.051], [-0.264, -0.061, 1.071], 
-                 [-0.202, -0.059, 1.071], [-0.261, -0.083, 1.092],
-                 [-0.203, -0.088, 1.097]])
 
 camera_points = np.array([
-                        
-                        [-0.3080078363418579, 0.21759659051895142, 0.905360996723175],
-                        [-0.2357361912727356, 0.21824215352535248, 0.9080156087875366],
-                        [-0.19622007012367249, 0.2169366031885147, 0.9025837182998657],
-                        [-0.23201145231723785, 0.1957687884569168, 0.9425292015075684],
-                        [-0.2714490294456482, 0.18230637907981873, 0.9670526385307312],
-                        [-0.271713525056839, 0.1646984964609146, 0.9951503276824951],
-                        [-0.20074930787086487, 0.13922852277755737, 1.0328669548034668],
-                        [-0.2999947965145111, 0.12795215845108032, 1.054322361946106],
-                        [-0.23950886726379395, 0.1260378658771515, 1.055233359336853],
-                        [-0.2993781268596649, 0.1104804202914238, 1.0812761783599854],
-                        [-0.24097344279289246, 0.10502596944570541, 1.0892646312713623],
+    [-0.3103788495063782, 0.20816968381404877, 0.9021732211112976],
+    [-0.2412874549627304, 0.21155597269535065, 0.9092869758605957],
+    [-0.19911204278469086, 0.2076052576303482, 0.8924124836921692],
+    [-0.23708832263946533, 0.18825772404670715, 0.9412122368812561],
+    [-0.2746868431568146, 0.17273056507110596, 0.9655194878578186],
+    [-0.27698686718940735, 0.1568019539117813, 0.9937079548835754],
+    [-0.20621158182621002, 0.13297036290168762, 1.0304497480392456],
+    [-0.3061258792877197, 0.11988385021686554, 1.0544846057891846],
+    [-0.24355772137641907, 0.1199633926153183, 1.0552380084991455],
+    [-0.30645254254341125, 0.1024651825428009, 1.0843398571014404],
+    [-0.24740150570869446, 0.096726194024086, 1.089730143547058],
 
-                        [-0.12073106318712234, 0.20365062355995178, 0.882495105266571],#a1
-                        [-0.12630455195903778, 0.5794693827629089, 2.9531195163726807],#c2
-                        [0.13536979258060455, 0.44501373171806335, 2.854153871536255],#e3
-                        [0.08332472294569016, 0.08850577473640442, 1.066428303718567],#f6
-                        [0.16400885581970215, 0.06594218313694, 1.0995609760284424],#h7
-                        [0.16618363559246063, 0.14700667560100555, 0.9544768929481506],#h3
-                        [-0.08039090782403946, 0.06980904191732407, 1.093740701675415],#b7
-                        [-0.03781365603208542, 0.09150190651416779, 1.077197790145874] #c6
-                        ])
+#    [-0.12599721550941467, 0.19377468526363373, 0.8839865922927856],
+#    [-0.11357908695936203, 0.505807638168335, 2.656207323074341],
+#    [0.10381188988685608, 0.45070210099220276, 2.8906421661376953],
+#    [0.07288794219493866, 0.08622042834758759, 1.063478946685791],
+#    [0.15284010767936707, 0.06357734650373459, 1.0952370166778564],
+#    [0.15698301792144775, 0.14513954520225525, 0.9543092846870422],
+#    [-0.09062656760215759, 0.06751318275928497, 1.0909947156906128],
+#    [-0.047709643840789795, 0.08860450983047485, 1.0676332712173462],
+])
 
-robot_points2 = np.array([[0.07403822032383311, -0.3939940291650029, 0.02654453100428729],
-    [0.08402962108584439, -0.676097716024815, 0.02654453100428729],
-[-0.1980740657739677, -0.6860891167868267, 0.02654453100428729],
-[-0.20806546653597896, -0.4039854299270146, 0.02654453100428729],
-[-0.15920088204571045, -0.6443612471265662, 0.02654453100428729],
-[-0.00513549009868305, -0.43714924179126513, 0.02654453100428729],
-[-0.12032769831745321, -0.6026333774663056, 0.02654453100428729],
-[0.03801972252757907, -0.5163229522137812, 0.02654453100428729],
-[-0.12460972721545804, -0.481731797383529, 0.02654453100428729],
-[-0.20235609467197252, -0.5651875367040501, 0.02654453100428729],
-[0.06746752254761613, -0.8633371584169282, 0.007079734195505616],
-[0.06900460426455089, -0.7907510515339803, 0.006337739967359035],
-[0.06516478101060597, -0.75381656004596, 0.006358399640977119],
-[0.02610071820239119, -0.791415925574318, 0.0037656494241480043],
-[-0.0019430260612295228, -0.8270257726743608, 0.005951583723496023],
-[-0.036391716297822924, -0.8287364985190336, 0.004046574681082216],
-[-0.08291531608503802, -0.760615658674035, 0.005179043976842768],
-[-0.10612821800244907, -0.8597682464092342, 0.00641874412581972],
-[-0.10866592279395426, -0.7995143871925338, 0.004345479480520387],
-[-0.1405626578966045, -0.8588724325223602, 0.006666308336709947],
-[-0.15131221934585218, -0.8006704887295085, 0.006332558092061263]])
+
 
 robot_points = np.array([
 [0.07165449155305594, -0.8689120342824104, 0.00761849382290658], #1
@@ -84,14 +52,14 @@ robot_points = np.array([
 [-0.13430503939697003, -0.8594993130056128, 0.004450275407329174], #10
 [-0.1462758604281513, -0.8000864040037845, 0.00473211183153302], #11
 
-[0.08205673493996721, -0.6753187762204925, 0.025300681966506575], #a1
-[0.04006300568110827, -0.5963315088823268, 0.025300681966506575], #c2
-[-0.001930723577750662, -0.517344241544161, 0.025300681966506575], #e3
-[-0.12291172017477514, -0.48035070346485403, 0.025300681966506575], #f6
-[-0.16490544943363408, -0.4013634361266884, 0.025300681966506575], #h7
-[-0.0049308382854820615, -0.3973632831830471, 0.025300681966506575], #h3
-[-0.15890522001817128, -0.6413253528489165, 0.025300681966506575], #b7
-[-0.11991160546704374, -0.6003316618259681, 0.025300681966506575] #c6
+#[0.08205673493996721, -0.6753187762204925, 0.025300681966506575], #a1
+#[0.04006300568110827, -0.5963315088823268, 0.025300681966506575], #c2
+#[-0.001930723577750662, -0.517344241544161, 0.025300681966506575], #e3
+#[-0.12291172017477514, -0.48035070346485403, 0.025300681966506575], #f6
+#[-0.16490544943363408, -0.4013634361266884, 0.025300681966506575], #h7
+#[-0.0049308382854820615, -0.3973632831830471, 0.025300681966506575], #h3
+#[-0.15890522001817128, -0.6413253528489165, 0.025300681966506575], #b7
+#[-0.11991160546704374, -0.6003316618259681, 0.025300681966506575] #c6
 ])
 
 grip_offset = 0
@@ -123,6 +91,8 @@ H8 = [-0.20489910222067206, -0.4023634743625998, 0.025756493662524194, 2.2476131
 
 clicked_point = None
 point_cloud = sl.Mat()
+
+cube_pose = [-0.21923474289144815, -0.7716860104142782, 0.06772034126120247, 2.247590849983201, -2.1462403402250865, -8.055377065164397e-05]
 
 
 def reset_gripper(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT):
@@ -242,6 +212,9 @@ class ChessBot:
         self.safe_height = 0.15 + self.floor_height
         self.free_platform = self.move_on_chessboard(self.positions['a8'], right=-8.5, up=2)[0:2] + [self.floor_height + 0.042] + self.down_orientation
         self.table_height = self.floor_height - 0.02
+
+        #global cube_pose
+        #cube_pose = ChessBot.modify_pose_relative(self.positions["a8"], dx=-0.02, dy=-0.09, dz=0.09)
 
     def __exit__(self, exc_type, exc_value, traceback):
         try:
@@ -489,7 +462,7 @@ class ChessBot:
 
         self.move_to(z=self.safe_height)
 
-    def align_piece_rotaion2(self, type=None, start_pos=None, end_pos=None, lying = True, orientation=None):
+    def align_piece_rotaion3(self, type=None, start_pos=None, end_pos=None, lying = True, orientation=None):
         if start_pos[Z] < self.safe_height:
             self.move_to(z=self.safe_height)
 
@@ -509,13 +482,15 @@ class ChessBot:
             cur_pos = [start_pos[X], start_pos[Y], self.grip_height[type]] + self.up_orientation
             # later
         
-        self.set_gripper(grip_size[type]) # grip the piece
+        self.set_gripper(grip_size[type]-3) # grip the piece
          
 
         self.move_to(z=self.safe_height)
 
+        robot.move_to(cube_pose, z=self.safe_height)
+
         # rotate slowly
-        self.move_to(x=self.positions['c1'][X],y=self.positions['c1'][Y], z=self.safe_height)
+        #self.move_to(x=self.positions['c1'][X],y=self.positions['c1'][Y], z=self.safe_height)
         self.move_to(orientation = self.get_rotated_tcp_orientation(Rx=-85))
         
 
@@ -556,6 +531,75 @@ class ChessBot:
         robot.align_piece_rotaion2(type='pawn', start_pos=XYZ + robot.down_orientation, 
                                     end_pos=robot.positions['a2'], orientation = robot.get_rotated_tcp_orientation(Rz=dz+90),
                                     lying = True)
+
+
+
+
+
+    def get_dead_chess_piece3(self, type):
+        base_point, head_point = get_base_and_head_camera_points()
+        #print([float(base_point[0]), float(base_point[1]), float(base_point[2])])
+        #print([float(head_point[0]), float(head_point[1]), float(head_point[2])])
+        
+
+        
+        R, t = estimate_transform(camera_points, robot_points)
+        base_robot =  R @ base_point + t
+        head_robot = R @ head_point + t
+
+        # fix alignment
+        base_robot[Y]-=0.02
+        head_robot[Y]-=0.02
+
+        # calculate middle position
+        dx = head_robot[0] - base_robot[0]
+        dy = head_robot[1] - base_robot[1]
+        dz = math.degrees(math.atan2(dx, dy))
+
+        XYZ = [0.5*(head_robot[0] + base_robot[0]), 0.5*(head_robot[1] + base_robot[1]), 0]
+        
+        orientation = robot.get_rotated_tcp_orientation(Rz=dz+90)
+        lying = True
+
+        if XYZ[Z] < self.safe_height:
+            self.move_to(z=self.safe_height)
+
+        #self.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET, wait=False)
+        self.set_gripper(140,wait=False)
+        if orientation is not None:
+            XYZ[3:6] = orientation
+        #mov and rotate partially
+        if lying:
+            
+            self.move_to(XYZ, z=self.safe_height)
+            self.move_to(XYZ, z=self.table_height+0.0015)
+            
+            
+            
+        else: #standing
+            cur_pos = [XYZ[X], XYZ[Y], self.grip_height[type]] + self.up_orientation
+            # later
+        
+        self.set_gripper(grip_size[type]) # grip the piece
+         
+
+        self.move_to(z=self.safe_height)
+
+        robot.move_to(cube_pose, z=self.safe_height)
+
+        # rotate slowly
+        self.move_to(orientation = self.get_rotated_tcp_orientation(Rx=-85))
+        
+        self.move_to(z=cube_pose[Z] - self.floor_height + self.grip_height[type] + 0.01)
+        self.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET)
+        self.move_to(cube_pose, z=cube_pose[Z] - self.floor_height + self.grip_height[type]- 0.01)
+        self.move_to(dx=0.01)
+        self.set_gripper(grip_size[type])
+        self.move_to(dz=0.05)
+        self.move_to(self.positions["a1"], z=self.safe_height)
+        self.move_to(z=self.grip_height[type])
+        self.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET)
+        self.move_to(z=self.safe_height)
         
        
 
@@ -679,14 +723,60 @@ if __name__ == "__main__":
     with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1, H8=H8) as robot:
        # מלך, מלכה, רץ, פרש, צריח, רגלי = king, queen, bishop, knight, rook, pawn
         print("starting session")
+        
         robot.move_to(robot.start_position, z=robot.safe_height)
         
-        base, head = get_base_and_head_camera_points()
-        robot.move_to(robot.camera_vector_to_robot_vector(base), dz=0.01)
-        #robot.get_dead_chess_piece()
+        #base, head = get_base_and_head_camera_points()
+        #robot.move_to(robot.camera_vector_to_robot_vector(base), dz=0.01)
         
-    
+
+
         
+        # base_point, head_point = get_base_and_head_camera_points()        
+        # R, t = estimate_transform(camera_points, robot_points)
+        # base_robot =  R @ base_point + t
+        # head_robot = R @ head_point + t
+        # # fix alignment
+        # #base_robot[Y]-=0.01
+        # #head_robot[Y]-=0.01
+        # # calculate middle position
+        # dx = head_robot[0] - base_robot[0]
+        # dy = head_robot[1] - base_robot[1]
+        # dz = math.degrees(math.atan2(dx, dy))
+        # XYZ = [0.5*(head_robot[0] + base_robot[0]), 0.5*(head_robot[1] + base_robot[1]), 0]
+        # robot.align_piece_rotaion3(type='queen', start_pos=XYZ + robot.down_orientation, 
+        #                             end_pos=robot.positions['a2'], orientation = robot.get_rotated_tcp_orientation(Rz=dz+90),
+        #                             lying = True)
+        robot.get_dead_chess_piece3("queen")
+        
+        
+        print(robot.positions['a1'][0:3])
+        print(robot.positions['c2'][0:3])
+        print(robot.positions['e3'][0:3])
+        print(robot.positions['f6'][0:3])
+        print(robot.positions['h7'][0:3])
+        print(robot.positions['h3'][0:3])
+        print(robot.positions['b7'][0:3])
+        print(robot.positions['c6'][0:3])
+
+        # with open("output", "a") as f:
+        #     for i in range(0, 8 + 11 + 1, 2):
+        #         base, head = get_base_and_head_camera_points()
+        #         print(f"point {i}:", list(map(float, base)))
+        #         print(f"point {i + 1}:", list(map(float, head)))
+        #         print(f"point {i}:", list(map(float, base)), file=f)
+        #         print(f"point {i + 1}:", list(map(float, head)), file=f)
+        #         f.flush()
+        
+
+        #[0.08205673493996721, -0.6753187762204925, 0.025300681966506575], #a1
+        #[0.04006300568110827, -0.5963315088823268, 0.025300681966506575], #c2
+        #[-0.001930723577750662, -0.517344241544161, 0.025300681966506575], #e3
+        #[-0.12291172017477514, -0.48035070346485403, 0.025300681966506575], #f6
+        #[-0.16490544943363408, -0.4013634361266884, 0.025300681966506575], #h7
+        #[-0.0049308382854820615, -0.3973632831830471, 0.025300681966506575], #h3
+        #[-0.15890522001817128, -0.6413253528489165, 0.025300681966506575], #b7
+        #[-0.11991160546704374, -0.6003316618259681, 0.025300681966506575] #c6
         
         
 
@@ -694,6 +784,7 @@ if __name__ == "__main__":
 
 
         robot.move_to(robot.start_position, z=robot.safe_height)
+
         print("end of session")
 
 
