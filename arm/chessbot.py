@@ -293,6 +293,8 @@ class ChessBot:
         else:
             self.gripper.move(position, speed, force)
 
+    def get_gripper(self):
+        return self.gripper.get_current_position()
     @staticmethod
     def modify_pose(pose, x=None, y=None, z=None, rx=None, ry=None, rz=None):
         modified = pose.copy()
@@ -356,6 +358,35 @@ class ChessBot:
         self.move_to(z=self.safe_height)
         self.move_to(self.start_position, speed=speed, acceleration=acceleration)
 
+    def mov_chess_piece_grip_modify(self, type=None, start_pos=None, end_pos=None, speed=None, acceleration=None, rz_rotation=None):
+        if speed is None:
+            speed = self.speed
+        if acceleration is None:
+            acceleration = self.acceleration
+        if self.pose[Z] < self.safe_height:
+            self.move_to(z=self.safe_height)
+        start_pos = self.positions[start_pos] # update chess board location
+        end_pos = self.positions[end_pos] #  update chess board location
+        if rz_rotation is not None:
+            start_pos[3:6] = self.get_rotated_tcp_orientation(start_pos,Rz=rz_rotation)
+            end_pos[3:6] = self.get_rotated_tcp_orientation(end_pos,Rz=rz_rotation)
+
+        self.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET,wait=False) #  open the gripper
+
+        self.move_to(start_pos, z=self.safe_height, speed=speed, acceleration=acceleration) # move to first spot
+        self.move_to(z=self.grip_height[type])
+
+        self.set_gripper(255) # grip the piece
+
+        self.move_to(start_pos, z=self.safe_height)
+        self.move_to(end_pos, z=self.safe_height, speed=speed, acceleration=acceleration)
+        self.move_to(z=self.grip_height[type] + GRIP_RELEASE_HEIGHT)
+        
+        
+        self.set_gripper(self.get_gripper() - GRIP_RELEASE_OFFSET) # release the piece
+        
+        self.move_to(z=self.safe_height)
+        self.move_to(self.start_position, speed=speed, acceleration=acceleration)
 
     def move_smooth_path(self, steps, blend_radius=0.03, speed=None, acceleration=None):
         
@@ -532,10 +563,6 @@ class ChessBot:
                                     end_pos=robot.positions['a2'], orientation = robot.get_rotated_tcp_orientation(Rz=dz+90),
                                     lying = True)
 
-
-
-
-
     def get_dead_chess_piece3(self, type):
         base_point, head_point = get_base_and_head_camera_points()
         #print([float(base_point[0]), float(base_point[1]), float(base_point[2])])
@@ -548,8 +575,10 @@ class ChessBot:
         head_robot = R @ head_point + t
 
         # fix alignment
-        base_robot[Y]-=0.02
-        head_robot[Y]-=0.02
+        base_robot[Y]-=0.01
+        head_robot[Y]-=0.01
+        base_robot[X]+=0.01
+        base_robot[X]+=0.01
 
         # calculate middle position
         dx = head_robot[0] - base_robot[0]
@@ -592,6 +621,7 @@ class ChessBot:
         
         self.move_to(z=cube_pose[Z] - self.floor_height + self.grip_height[type] + 0.01)
         self.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET)
+        
         self.move_to(cube_pose, z=cube_pose[Z] - self.floor_height + self.grip_height[type]- 0.01)
         self.move_to(dx=0.01)
         self.set_gripper(grip_size[type])
@@ -730,7 +760,8 @@ if __name__ == "__main__":
         #robot.move_to(robot.camera_vector_to_robot_vector(base), dz=0.01)
         
 
-
+        
+        #robot.mov_chess_piece_grip_modify('pawn', 'b1', 'b3', speed=0.5)
         
         # base_point, head_point = get_base_and_head_camera_points()        
         # R, t = estimate_transform(camera_points, robot_points)
