@@ -214,7 +214,7 @@ class ChessBot:
         self.table_height = self.floor_height - 0.02
 
         #global cube_pose
-        #cube_pose = ChessBot.modify_pose_relative(self.positions["a8"], dx=-0.02, dy=-0.09, dz=0.09)
+        #cube_pose = ChessBot.modify_pose(self.positions["a8"], dx=-0.02, dy=-0.09, dz=0.09)
 
     def __exit__(self, exc_type, exc_value, traceback):
         try:
@@ -258,26 +258,28 @@ class ChessBot:
         if pose is None:
             pose = self.pose
 
-        abs_params = any(v is not None for v in (x, y, z, rx, ry, rz))
-        rel_params = any(v is not None for v in (dx, dy, dz, drx, dry, drz))
-        ver_ori = orientation is not None
-        if sum([abs_params, rel_params, ver_ori]) > 1: # pick only one of them
-            raise ValueError("Cannot mix absolute (x,y,z,rx,ry,rz) and relative (dx,dy,dz,drx,dry,drz) parameters and rotations")
-
-        if abs_params:
-            target_pose = self.modify_pose(pose, x=x, y=y, z=z, rx=rx, ry=ry, rz=rz)
-        elif rel_params:
-            target_pose = self.modify_pose_relative(pose, dx=dx, dy=dy, dz=dz, drx=drx, dry=dry, drz=drz)
-        elif ver_ori:
-            target_pose = pose[0:3] + orientation
-        else:
-            target_pose = pose.copy()
+        # Handle orientation case
+        if orientation is not None:
+            # Check if any other params are provided
+            other_params = any(v is not None for v in (x, y, z, rx, ry, rz, dx, dy, dz, drx, dry, drz))
+            if other_params:
+                raise ValueError("Cannot mix orientation with other parameters")
+            return pose[0:3] + orientation
+        
+        # Use unified modify_pose for all position/rotation parameters
+        target_pose = self.modify_pose(pose, x=x, y=y, z=z, rx=rx, ry=ry, rz=rz,
+                                        dx=dx, dy=dy, dz=dz, drx=drx, dry=dry, drz=drz)
 
         return target_pose
 
     def move_to(self, pose=None, x=None, y=None, z=None, rx=None, ry=None, rz=None, orientation = None,
                 dx=None, dy=None, dz=None, drx=None, dry=None, drz=None, speed = None, acceleration = None):
+        """Move to a target pose. Accepts absolute, relative, or mixed arguments.
         
+        Absolute parameters (x, y, z, rx, ry, rz) set the coordinate directly.
+        Relative parameters (dx, dy, dz, drx, dry, drz) add to the current/given pose.
+        Can also provide orientation directly or mix absolute and relative parameters.
+        """
         if speed is None:
             speed = self.speed
         if acceleration is None:
@@ -296,37 +298,70 @@ class ChessBot:
     def get_gripper(self):
         return self.gripper.get_current_position()
     @staticmethod
-    def modify_pose(pose, x=None, y=None, z=None, rx=None, ry=None, rz=None):
+    def modify_pose(pose, x=None, y=None, z=None, rx=None, ry=None, rz=None,
+                    dx=None, dy=None, dz=None, drx=None, dry=None, drz=None):
+        """Modify a pose with absolute and/or relative parameters.
+        
+        Absolute parameters (x, y, z, rx, ry, rz) set the coordinate directly.
+        Relative parameters (dx, dy, dz, drx, dry, drz) add to the coordinate.
+        If both absolute and relative are provided for the same coordinate, they are summed.
+        """
         modified = pose.copy()
-        if x is not None:
-            modified[X] = x
-        if y is not None:
-            modified[Y] = y
-        if z is not None:
-            modified[Z] = z
-        if rx is not None:
-            modified[RX] = rx
-        if ry is not None:
-            modified[RY] = ry
-        if rz is not None:
-            modified[RZ] = rz
-        return modified
-
-    @staticmethod
-    def modify_pose_relative(pose, dx=None, dy=None, dz=None, drx=None, dry=None, drz=None):
-        modified = pose.copy()
-        if dx is not None:
-            modified[X] += dx
-        if dy is not None:
-            modified[Y] += dy
-        if dz is not None:
-            modified[Z] += dz
-        if drx is not None:
-            modified[RX] += drx
-        if dry is not None:
-            modified[RY] += dry
-        if drz is not None:
-            modified[RZ] += drz
+        
+        # Process X coordinate (absolute and/or relative)
+        if x is not None or dx is not None:
+            value = pose[X]
+            if x is not None:
+                value = x
+            if dx is not None:
+                value += dx
+            modified[X] = value
+        
+        # Process Y coordinate (absolute and/or relative)
+        if y is not None or dy is not None:
+            value = pose[Y]
+            if y is not None:
+                value = y
+            if dy is not None:
+                value += dy
+            modified[Y] = value
+        
+        # Process Z coordinate (absolute and/or relative)
+        if z is not None or dz is not None:
+            value = pose[Z]
+            if z is not None:
+                value = z
+            if dz is not None:
+                value += dz
+            modified[Z] = value
+        
+        # Process RX rotation (absolute and/or relative)
+        if rx is not None or drx is not None:
+            value = pose[RX]
+            if rx is not None:
+                value = rx
+            if drx is not None:
+                value += drx
+            modified[RX] = value
+        
+        # Process RY rotation (absolute and/or relative)
+        if ry is not None or dry is not None:
+            value = pose[RY]
+            if ry is not None:
+                value = ry
+            if dry is not None:
+                value += dry
+            modified[RY] = value
+        
+        # Process RZ rotation (absolute and/or relative)
+        if rz is not None or drz is not None:
+            value = pose[RZ]
+            if rz is not None:
+                value = rz
+            if drz is not None:
+                value += drz
+            modified[RZ] = value
+        
         return modified
 
     def mov_chess_piece(self, type=None, start_pos=None, end_pos=None, speed=None, acceleration=None, rz_rotation=None):
@@ -622,8 +657,8 @@ class ChessBot:
         self.move_to(z=cube_pose[Z] - self.floor_height + self.grip_height[type] + 0.01)
         self.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET)
         
-        self.move_to(cube_pose, z=cube_pose[Z] - self.floor_height + self.grip_height[type]- 0.01)
-        self.move_to(dx=0.01)
+        self.move_to(cube_pose,dx=0.01, z=cube_pose[Z] - self.floor_height + self.grip_height[type]- 0.01)
+        #self.move_to(dx=0.01)
         self.set_gripper(grip_size[type])
         self.move_to(dz=0.05)
         self.move_to(self.positions["a1"], z=self.safe_height)
