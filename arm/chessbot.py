@@ -11,86 +11,61 @@ import cv2
 import pyzed.sl as sl
 import math
 
-# EYAL
-# the second one
-ROBOT_IP = "192.168.56.101"
+URI_IP = "192.168.56.101"
+AYAL_IP = "192.168.57.101"
+
+A1_URI = [0.08205673493996721, -0.6753187762204925, 0.024844870270488956, 2.247469008346155, -2.146149708890044, 0]
+H8_URI = [-0.20489910222067206, -0.4023634743625998, 0.025756493662524194, 2.247613176209329, -2.1463343846561838, 0]
+A1_AYAL_ = [-0.4962274477899617, -0.5022420795908198, -0.23857286758367258, -0.03210235266837886, 3.139885740996207, -0.03280161913960377]
+H8_AYAL_ = [-0.21527979233210007, -0.22202487265443357, -0.24005978762707658, -0.03210042154743317, 3.1398883430416626, -0.03278482642258741]
+
+############################################### test #################################################################
+A1_AYAL = [-0.4962274477899617, -0.5022420795908198, -0.23857286758367258, 0, np.pi, -0.03280161913960377]
+H8_AYAL = [-0.21527979233210007, -0.22202487265443357, -0.24005978762707658, 0, np.pi, -0.03278482642258741]
+rad = math.atan2(H8_AYAL[1] - A1_AYAL[1], H8_AYAL[0] - A1_AYAL[0])
+A1_AYAL[5] = rad-np.pi/4
+H8_AYAL[5] = rad-np.pi/4
+#print(rad-np.pi/4)
+######################################################################################################################
+BASE = [0.5155237913131714, -1.0520588916591187, 2.1573708693133753, -2.685061117211813, -1.549094025288717, -1.0686124006854456]
+
+ROBOT_IP = AYAL_IP
 BASE_TCP_PORT = 63352
-
-
-
-camera_points = np.array([
-    [-0.3103788495063782, 0.20816968381404877, 0.9021732211112976],
-    [-0.2412874549627304, 0.21155597269535065, 0.9092869758605957],
-    [-0.19911204278469086, 0.2076052576303482, 0.8924124836921692],
-    [-0.23708832263946533, 0.18825772404670715, 0.9412122368812561],
-    [-0.2746868431568146, 0.17273056507110596, 0.9655194878578186],
-    [-0.27698686718940735, 0.1568019539117813, 0.9937079548835754],
-    [-0.20621158182621002, 0.13297036290168762, 1.0304497480392456],
-    [-0.3061258792877197, 0.11988385021686554, 1.0544846057891846],
-    [-0.24355772137641907, 0.1199633926153183, 1.0552380084991455],
-    [-0.30645254254341125, 0.1024651825428009, 1.0843398571014404],
-    [-0.24740150570869446, 0.096726194024086, 1.089730143547058],
-
-#    [-0.12599721550941467, 0.19377468526363373, 0.8839865922927856],
-#    [-0.11357908695936203, 0.505807638168335, 2.656207323074341],
-#    [0.10381188988685608, 0.45070210099220276, 2.8906421661376953],
-#    [0.07288794219493866, 0.08622042834758759, 1.063478946685791],
-#    [0.15284010767936707, 0.06357734650373459, 1.0952370166778564],
-#    [0.15698301792144775, 0.14513954520225525, 0.9543092846870422],
-#    [-0.09062656760215759, 0.06751318275928497, 1.0909947156906128],
-#    [-0.047709643840789795, 0.08860450983047485, 1.0676332712173462],
-])
-
-robot_points = np.array([
-[0.07165449155305594, -0.8689120342824104, 0.00761849382290658], #1
-[0.0746530566617607, -0.7953362242005896, 0.004351846959708611], #2
-[0.07251428629002046, -0.7563871277745808, 0.004090195582639206], #3
-[0.0297674262951436, -0.7946321237172691, 0.004359263137356434], #4
-[0.002640284170454068, -0.8300784899379653, 0.005978647005982551], #5
-[-0.03088749462845628, -0.8305381263150142, 0.006450310317636543], #6
-[-0.07661470188311771, -0.7625228718765196, 0.005115601503159012], #7
-[-0.10240466056378457, -0.8607379650664497, 0.005362619851522338], #8
-[-0.10241297195056764, -0.7979398917752542, 0.0042431200006042835], #9
-[-0.13430503939697003, -0.8594993130056128, 0.004450275407329174], #10
-[-0.1462758604281513, -0.8000864040037845, 0.00473211183153302], #11
-
-#[0.08205673493996721, -0.6753187762204925, 0.025300681966506575], #a1
-#[0.04006300568110827, -0.5963315088823268, 0.025300681966506575], #c2
-#[-0.001930723577750662, -0.517344241544161, 0.025300681966506575], #e3
-#[-0.12291172017477514, -0.48035070346485403, 0.025300681966506575], #f6
-#[-0.16490544943363408, -0.4013634361266884, 0.025300681966506575], #h7
-#[-0.0049308382854820615, -0.3973632831830471, 0.025300681966506575], #h3
-#[-0.15890522001817128, -0.6413253528489165, 0.025300681966506575], #b7
-#[-0.11991160546704374, -0.6003316618259681, 0.025300681966506575] #c6
-])
+A1_ = A1_AYAL
+H8_ = H8_AYAL
 
 grip_size = {
-    "queen": 180,  # מלכה
-    "pawn": 193,   # רגלי
-    "king": 180,   # מלך
-    "rook": 178,   # צריח
-    "knight": 198, # פרש
-    "bishop": 185, # רץ
+    "queen": 179,  # מלכה
+    "pawn": 196,   # רגלי
+    "king": 176,   # מלך
+    "rook": 182,   # צריח
+    "knight": 204, # פרש
+    "bishop": 190, # רץ
 }
 
 X, Y, Z, RX, RY, RZ = 0,1,2,3,4,5
-GRIP_RELEASE_OFFSET = 24
+GRIP_RELEASE_OFFSET = 30
 GRIP_RELEASE_HEIGHT = 0.005
 CLOSED = 255
 OPENED = 0
 HALF_OPENED = 140
 OFFSET_TO_TABLE_HEIGHT = -0.02
 
-A1_ = [0.08402962108584439, -0.676097716024815, 0.028387340797933758, 2.2085369502005876, 2.212499868868369, -0.0007045682471379121]
-H8_ = [-0.20806546653597902, -0.40398542992701425, 0.02470172121064082, 2.2085529406690534, 2.2124634903015785, -0.0007412473852994461]
-A1 = [0.08205673493996721, -0.6753187762204925, 0.024844870270488956, 2.247469008346155, -2.146149708890044, 0]
-H8 = [-0.20489910222067206, -0.4023634743625998, 0.025756493662524194, 2.247613176209329, -2.1463343846561838, 0]
+
+
 
 
 clicked_point = None
 point_cloud = sl.Mat()
 
-cube_pose = [-0.21923474289144815, -0.7716860104142782, 0.06772034126120247, 2.247590849983201, -2.1462403402250865, -8.055377065164397e-05]
+
+R = np.array([[-0.99954817, -0.02010487, -0.02234386],
+              [ 0.00272617,  0.67966745, -0.73351532],
+              [ 0.02993362, -0.73324481, -0.67930555]])
+
+t = np.array([-0.44277486, 0.1592128, 0.1834975 ])
+
+
 
 
 def reset_gripper(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT):
@@ -117,23 +92,38 @@ def reset_gripper(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT):
             except Exception:
                 pass
     sys.exit(0)
-
 def move_to_start_postion():
-    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1, H8=H8) as robot:
+    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
         robot.move_to(robot.start_position, z=robot.safe_height)
     sys.exit(0)
 def grip_close():
-    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1, H8=H8) as robot:
+    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
         robot.set_gripper(CLOSED)
     sys.exit(0)
 def grip_open():
-    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1, H8=H8) as robot:
+    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
         robot.set_gripper(OPENED)
     sys.exit(0)
 def print_position():
-    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1, H8=H8) as robot:
-        print(f"robot position is {robot.pose}")
+    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
+        print(robot.pose)
     sys.exit(0)
+def align_position():
+    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
+        robot.rtde_c.moveJ(BASE, 1, 0.5)
+    sys.exit(0)
+def get_grip():
+    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
+        print(robot.get_gripper())
+    sys.exit(0)
+def print_joints():
+    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
+        print(list(robot.rtde_r.getActualQ()))
+    sys.exit(0)
+
+
+
+
 
 
 class ChessBot:
@@ -159,6 +149,7 @@ class ChessBot:
         self.down_orientation = [2.0107452890463056, -2.3743186369030598, -0.0762631964824858]
         self.free_platform = [0,0,0,0,0,0]
         self.table_height = 0
+        self.cube_pose = [0,0,0,0,0,0]
 
     def __enter__(self):
         self.rtde_c = RTDEControlInterface(self.robot_ip)
@@ -213,7 +204,7 @@ class ChessBot:
 
         self.grip_height["queen"] = self.floor_height + 0.04
         self.grip_height["pawn"] = self.floor_height + 0.025 
-        self.grip_height["king"] = self.floor_height + 0.04
+        self.grip_height["king"] = self.floor_height + 0.035
         self.grip_height["rook"] = self.floor_height + 0.025
         self.grip_height["knight"] = self.floor_height + 0.03
         self.grip_height["bishop"] = self.floor_height + 0.03
@@ -229,9 +220,11 @@ class ChessBot:
         self.free_platform = self.move_on_chessboard(self.positions['a8'], right=-8.5, up=2)[0:2] + [self.floor_height + 0.042] + self.down_orientation
         self.table_height = self.floor_height - 0.02
 
-        #global cube_pose
-        #cube_pose = ChessBot.modify_pose(self.positions["a8"], dx=-0.02, dy=-0.09, dz=0.09)
-
+        
+        self.cube_pose = self.move_on_chessboard(self.positions['a8'], up=9, right=-0.5)
+        self.cube_pose[Z] += 0.038
+        self.cube_pose[3:] = self.get_rotated_tcp_orientation(base_orientation = self.cube_pose, Rz = 90)
+        
     def __exit__(self, exc_type, exc_value, traceback):
         try:
             if self.rtde_c is not None:
@@ -254,6 +247,7 @@ class ChessBot:
         except Exception:
             pass
 
+
     def normalize_pos(self, pos):
         if isinstance(pos, str):
             return self.positions[pos]
@@ -267,7 +261,6 @@ class ChessBot:
             return pos
         else:
             raise Exception("bad length")
-
 
     @property
     def pose(self):
@@ -495,7 +488,7 @@ class ChessBot:
         self.move_smooth_path(path_steps3, blend_radius=blend_radius, speed=0.05) # move smoothly
 
     def camera_vector_to_robot_vector(self, camera_vector):
-        R, t = estimate_transform(camera_points, robot_points)
+        #R, t = estimate_transform(camera_points, robot_points)
         return list(map(float, R @ camera_vector + t)) + self.down_orientation
 
     @staticmethod
@@ -508,15 +501,14 @@ class ChessBot:
         ############################################################### add knight support
         # get robot postions from the interactable camera
         base_point, head_point = get_base_and_head_camera_points()
-        R, t = estimate_transform(camera_points, robot_points)
         base_robot =  R @ base_point + t
         head_robot = R @ head_point + t
 
         # fix alignment
-        base_robot[Y]-=0.01
-        head_robot[Y]-=0.01
-        base_robot[X]+=0.01
-        head_robot[X]+=0.01
+        #base_robot[Y]-=0.01
+        #head_robot[Y]-=0.01
+        #base_robot[X]+=0.01
+        #head_robot[X]+=0.01
 
         # calculate middle position
         dx = head_robot[0] - base_robot[0]
@@ -534,7 +526,8 @@ class ChessBot:
         middle_position = [
             *ChessBot.weighted_avg(head_robot[:2], base_robot[:2], bias),
             0,
-            *self.get_rotated_tcp_orientation(Rz=dz+90)
+            #*self.get_rotated_tcp_orientation(Rz=dz+90)
+            *self.get_rotated_tcp_orientation(Rz=dz+180)
         ]
         
         # fix height
@@ -550,22 +543,25 @@ class ChessBot:
             self.set_gripper(CLOSED) # grip the piece
 
             self.move_to(z=self.safe_height)
-            self.move_to(cube_pose, z=self.safe_height)
+            #self.move_to(self.cube_pose, z=self.safe_height)
+            self.move_to(self.cube_pose, z=self.safe_height, 
+                        orientation = self.get_rotated_tcp_orientation(base_orientation = self.cube_pose, Rz=-180))
 
             # rotate slowly
-            self.move_to(orientation = self.get_rotated_tcp_orientation(Rx=-85))
-            self.move_to(z=cube_pose[Z] - self.floor_height + self.grip_height[type] + 0.01)
+            self.move_to(orientation = self.get_rotated_tcp_orientation(Rx=85))
+            self.move_to(z=self.cube_pose[Z] - self.floor_height + self.grip_height[type] + 0.00)
             
             # release standing piece
-            #self.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET) 
-            self.set_gripper(self.get_gripper() - GRIP_RELEASE_OFFSET)
+            self.set_gripper(open_by=GRIP_RELEASE_OFFSET)
 
             # straighten the arm back
-            self.move_to(cube_pose,dx=0.01, z=cube_pose[Z] - self.floor_height + self.grip_height[type]- 0.01) 
+            
+            self.move_to(self.cube_pose,dx=-0.007, z=self.cube_pose[Z] - self.floor_height + self.grip_height[type]- 0.01,
+                orientation = self.get_rotated_tcp_orientation(base_orientation = self.cube_pose, Rx=0,Rz=-180))
 
             self.set_gripper(CLOSED) # grip the piece
 
-            self.move_to(dz=0.05) # raise the arm
+            self.move_to(dz=0.05)#, orientation = self.get_rotated_tcp_orientation(Rz=180)) # raise the arm
 
         elif state == 'standing':
             ##################################################### add knight support
@@ -590,9 +586,11 @@ class ChessBot:
                 else None
         )
         self.move_to(z=self.grip_height[type] + GRIP_RELEASE_HEIGHT)
-        #self.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET)
+
         self.set_gripper(open_by=GRIP_RELEASE_OFFSET)
+
         self.move_to(z=self.safe_height)
+        self.rtde_c.moveJ(BASE, 1, 0.5)
         self.move_to(self.start_position, z=self.safe_height)
         
     def capture_piece(self, type, start_pos, end_pos = None, rz_start=None, move_to_start=True):
@@ -600,15 +598,22 @@ class ChessBot:
             end_pos = list(map(float, get_head_camera_point())) + self.down_orientation
         start_pos = self.normalize_pos(start_pos)
         end_pos = self.normalize_pos(end_pos)
+
         self.move_to(start_pos, z=self.safe_height, orientation=self.down_orientation)
+
         self.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET,wait=False) #  open the gripper
+
         self.move_to(z=self.grip_height[type])
+
         self.set_gripper(CLOSED)
+
         self.move_to(z=self.safe_height)
-        #print(f"{end_pos = }")
         self.move_to(end_pos, z=self.safe_height)
         self.move_to(z=self.grip_height[type]+OFFSET_TO_TABLE_HEIGHT)
+
         self.set_gripper(open_by=GRIP_RELEASE_OFFSET)
+
+        # return to start position
         self.move_to(z=self.safe_height)
         if move_to_start:
             self.move_to(self.start_position, z=self.safe_height)
@@ -790,12 +795,12 @@ def get_head_camera_point():
     cv2.destroyAllWindows()
 
     
-    R, t = estimate_transform(camera_points, robot_points)
+    #R, t = estimate_transform(camera_points, robot_points)
     head_robot = R @ head_point + t
 
     # fix alignment
-    head_robot[Y]-=0.01
-    head_robot[X]+=0.01
+    #head_robot[Y]-=0.01
+    #head_robot[X]+=0.01
 
     return head_robot
 
@@ -803,14 +808,23 @@ def get_head_camera_point():
 
 
 def main():
-    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1, H8=H8, speed=0.5) as robot:
+    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_, speed=0.5) as robot:
        # מלך, מלכה, רץ, פרש, צריח, רגלי = king, queen, bishop, knight, rook, pawn
+        
         print("starting session")
         robot.move_to(robot.start_position, z=robot.safe_height)
         
-        robot.move_and_capture_piece(("pawn", "b2"), ("queen","c3"))
+        robot.move_to(robot.positions['a1'], dz = 0.005)
+        #robot.pick_up_dead_piece('queen', 'lying', 'g5')
 
-        robot.move_to(robot.start_position, z=robot.safe_height)
+
+
+
+        
+        
+        
+
+        #robot.move_to(robot.start_position, z=robot.safe_height)
         print("end of session")
 
         
@@ -827,6 +841,12 @@ if __name__ == "__main__":
             grip_close()
         if sys.argv[1].lower() == "open":
             grip_open()
+        if sys.argv[1].lower() == "align":
+            align_position()
+        if sys.argv[1].lower() == "grip":
+            get_grip()
+        if sys.argv[1].lower() == "joints":
+            print_joints()
     else:
         main()
 
@@ -849,5 +869,22 @@ if __name__ == "__main__":
         #         print(f"point {i}:", list(map(float, base)), file=f)
         #         print(f"point {i + 1}:", list(map(float, head)), file=f)
         #         f.flush()
-
+        '''
+        
+        # Press any key 12 times to print robot arm position
+        print("\nPress Enter 12 times to print robot arm position. Press Ctrl+C to exit.")
+        key_count = 0
+        try:
+            while True:
+                input()  # Wait for user to press Enter
+                current_pose = robot.pose
+                print(f"\n[Keypress {key_count}] Current Robot Arm Position:")
+                print(f"  Position (XYZ): {current_pose[:3]}")
+                key_count += 1
+                
+                
+        except KeyboardInterrupt:
+            print("\n\nExiting...")
+        '''
+    #robot.pick_up_dead_piece("queen", "lying", "a1")
     #robot.move_and_capture_piece(("pawn", "b2"), ("queen","c3"))

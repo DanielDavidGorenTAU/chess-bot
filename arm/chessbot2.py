@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import time
 import sys
 from rtde_control import RTDEControlInterface
@@ -9,7 +11,17 @@ import cv2
 import pyzed.sl as sl
 import math
 
-ROBOT_IP = "192.168.56.101"
+URI_IP = "192.168.56.101"
+AYAL_IP = "192.168.57.101"
+
+A1_URI = [0.08205673493996721, -0.6753187762204925, 0.024844870270488956, 2.247469008346155, -2.146149708890044, 0]
+H8_URI = [-0.20489910222067206, -0.4023634743625998, 0.025756493662524194, 2.247613176209329, -2.1463343846561838, 0]
+A1_AYAL = [-0.4962274477899617, -0.5022420795908198, -0.23857286758367258, -0.03210235266837886, 3.139885740996207, -0.03280161913960377]
+H8_AYAL = [-0.21527979233210007, -0.22202487265443357, -0.24005978762707658, -0.03210042154743317, 3.1398883430416626, -0.03278482642258741]
+
+A1_ = A1_URI
+H8_ = H8_URI
+ROBOT_IP = URI_IP
 BASE_TCP_PORT = 63352
 
 
@@ -37,8 +49,6 @@ camera_points = np.array([
 #    [-0.047709643840789795, 0.08860450983047485, 1.0676332712173462],
 ])
 
-
-
 robot_points = np.array([
 [0.07165449155305594, -0.8689120342824104, 0.00761849382290658], #1
 [0.0746530566617607, -0.7953362242005896, 0.004351846959708611], #2
@@ -62,31 +72,23 @@ robot_points = np.array([
 #[-0.11991160546704374, -0.6003316618259681, 0.025300681966506575] #c6
 ])
 
-grip_offset = 0
 grip_size = {
-    "queen": 180 +grip_offset, # מלכה
-    "pawn": 193+grip_offset,   # רגלי
-    "king": 180+grip_offset,   # מלך
-    "rook": 178+grip_offset,   # צריח
-    "knight": 198+grip_offset, # פרש
-    "bishop": 185+grip_offset, # רץ
-
-    "king_alignment": 179+grip_offset,
-    "queen_alignment": 181 +grip_offset,
-    "pawn_alignment": 195+grip_offset,
-    "rook_alignment": 179+grip_offset,
-    "knight_alignment": 167+grip_offset,
-    "bishop_alignment": 177+grip_offset, 
+    "queen": 180,  # מלכה
+    "pawn": 193,   # רגלי
+    "king": 180,   # מלך
+    "rook": 178,   # צריח
+    "knight": 198, # פרש
+    "bishop": 185, # רץ
 }
 
 X, Y, Z, RX, RY, RZ = 0,1,2,3,4,5
 GRIP_RELEASE_OFFSET = 24
-GRIP_REALIGNMENT_OFFSET = 4
 GRIP_RELEASE_HEIGHT = 0.005
-A1_ = [0.08402962108584439, -0.676097716024815, 0.028387340797933758, 2.2085369502005876, 2.212499868868369, -0.0007045682471379121]
-H8_ = [-0.20806546653597902, -0.40398542992701425, 0.02470172121064082, 2.2085529406690534, 2.2124634903015785, -0.0007412473852994461]
-A1 = [0.08205673493996721, -0.6753187762204925, 0.024844870270488956, 2.247469008346155, -2.146149708890044, 0]
-H8 = [-0.20489910222067206, -0.4023634743625998, 0.025756493662524194, 2.247613176209329, -2.1463343846561838, 0]
+CLOSED = 255
+OPENED = 0
+HALF_OPENED = 140
+OFFSET_TO_TABLE_HEIGHT = -0.02
+
 
 
 clicked_point = None
@@ -119,6 +121,23 @@ def reset_gripper(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT):
             except Exception:
                 pass
     sys.exit(0)
+def move_to_start_postion():
+    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
+        robot.move_to(robot.start_position, z=robot.safe_height)
+    sys.exit(0)
+def grip_close():
+    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
+        robot.set_gripper(CLOSED)
+    sys.exit(0)
+def grip_open():
+    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
+        robot.set_gripper(OPENED)
+    sys.exit(0)
+def print_position():
+    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
+        print(robot.pose)
+    sys.exit(0)
+
 
 class ChessBot:
     def __init__(self, robot_ip=None, base_tcp_port=None, speed=0.1, acceleration=0.1, A1 = None, H8 = None):
@@ -238,11 +257,26 @@ class ChessBot:
         except Exception:
             pass
 
+    def normalize_pos(self, pos):
+        if isinstance(pos, str):
+            return self.positions[pos]
+        if isinstance(pos, (np.ndarray, tuple)):
+            pos = list(map(float, pos))
+        if not isinstance(pos, list):
+            raise Exception("expected a list")
+        if len(pos) == 3:
+            return pos + self.down_orientation
+        elif len(pos) == 6:
+            return pos
+        else:
+            raise Exception("bad length")
+
+
     @property
     def pose(self):
         return self.rtde_r.getActualTCPPose()
 
-    # return a rotated version vector of curent position
+    # return a rotated version vector of curent position by tcp
     def get_rotated_tcp_orientation(self, base_orientation = None, Rx=0, Ry=0, Rz=0):
         if base_orientation is None:
             base_orientation = self.pose
@@ -252,7 +286,6 @@ class ChessBot:
         new_rot = rot_base * rot_local
         return  new_rot.as_rotvec().tolist()
     
-
     def calculate_target_pose(self, pose=None, x=None, y=None, z=None, rx=None, ry=None, rz=None, 
                               orientation = None, dx=None, dy=None, dz=None, drx=None, dry=None, drz=None):
         if pose is None:
@@ -260,15 +293,17 @@ class ChessBot:
 
         # Handle orientation case
         if orientation is not None:
-            # Check if any other params are provided
-            other_params = any(v is not None for v in (x, y, z, rx, ry, rz, dx, dy, dz, drx, dry, drz))
+            # Check if any x, y, z are provided
+            other_params = any(v is not None for v in (rx, ry, rz, drx, dry, drz))
             if other_params:
-                raise ValueError("Cannot mix orientation with other parameters")
-            return pose[0:3] + orientation
+                raise ValueError("Cannot mix orientation with x, y, z parameters")
         
         # Use unified modify_pose for all position/rotation parameters
         target_pose = self.modify_pose(pose, x=x, y=y, z=z, rx=rx, ry=ry, rz=rz,
                                         dx=dx, dy=dy, dz=dz, drx=drx, dry=dry, drz=drz)
+        
+        if orientation is not None:
+            target_pose[3:] = orientation
 
         return target_pose
 
@@ -289,7 +324,15 @@ class ChessBot:
         self.rtde_c.moveL(target_pose, speed, acceleration)
         return target_pose
 
-    def set_gripper(self, position, speed=120, force=0, wait = True):
+    def set_gripper(self, position=None, close_by=None, open_by=None, speed=120, force=0, wait = True):
+        if position is None and close_by is None and open_by is None:
+            raise Exception("expected position or close_by or open_by")
+        if position is None:
+            position = self.get_gripper()
+        if close_by is not None:
+            position += close_by
+        if open_by is not None:
+            position -= open_by
         if wait == True:
             self.gripper.move_and_wait_for_pos(position, speed, force)
         else:
@@ -364,66 +407,43 @@ class ChessBot:
         
         return modified
 
-    def mov_chess_piece(self, type=None, start_pos=None, end_pos=None, speed=None, acceleration=None, rz_rotation=None):
+    def mov_chess_piece(self, type=None, start_pos=None, end_pos=None, speed=None, acceleration=None, rz_rotation_start=None, rz_rotation_end=None, move_to_start=True):
         if speed is None:
             speed = self.speed
         if acceleration is None:
             acceleration = self.acceleration
         if self.pose[Z] < self.safe_height:
             self.move_to(z=self.safe_height)
-        start_pos = self.positions[start_pos] # update chess board location
-        end_pos = self.positions[end_pos] #  update chess board location
-        if rz_rotation is not None:
-            start_pos[3:6] = self.get_rotated_tcp_orientation(start_pos,Rz=rz_rotation)
-            end_pos[3:6] = self.get_rotated_tcp_orientation(end_pos,Rz=rz_rotation)
+
+        # update chess board locations
+        start_pos = self.normalize_pos(start_pos)
+        end_pos = self.normalize_pos(end_pos)
+        if rz_rotation_start is not None:
+            start_pos[3:6] = self.get_rotated_tcp_orientation(start_pos,Rz=rz_rotation_start)
+        if rz_rotation_end is not None:
+            end_pos[3:6] = self.get_rotated_tcp_orientation(end_pos,Rz=rz_rotation_end)
 
         self.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET,wait=False) #  open the gripper
 
-        self.move_to(start_pos, z=self.safe_height, speed=speed, acceleration=acceleration) # move to first spot
+        # move to first spot
+        self.move_to(start_pos, z=self.safe_height, speed=speed, acceleration=acceleration) 
         self.move_to(z=self.grip_height[type])
 
-        self.set_gripper(grip_size[type]) # grip the piece
+        self.set_gripper(CLOSED) # grip the piece
 
+        # move to end spot
         self.move_to(start_pos, z=self.safe_height)
         self.move_to(end_pos, z=self.safe_height, speed=speed, acceleration=acceleration)
         self.move_to(z=self.grip_height[type] + GRIP_RELEASE_HEIGHT)
-        
-        self.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET) # release the piece
-        
-        self.move_to(z=self.safe_height)
-        self.move_to(self.start_position, speed=speed, acceleration=acceleration)
-
-    def mov_chess_piece_grip_modify(self, type=None, start_pos=None, end_pos=None, speed=None, acceleration=None, rz_rotation=None):
-        if speed is None:
-            speed = self.speed
-        if acceleration is None:
-            acceleration = self.acceleration
-        if self.pose[Z] < self.safe_height:
-            self.move_to(z=self.safe_height)
-        start_pos = self.positions[start_pos] # update chess board location
-        end_pos = self.positions[end_pos] #  update chess board location
-        if rz_rotation is not None:
-            start_pos[3:6] = self.get_rotated_tcp_orientation(start_pos,Rz=rz_rotation)
-            end_pos[3:6] = self.get_rotated_tcp_orientation(end_pos,Rz=rz_rotation)
-
-        self.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET,wait=False) #  open the gripper
-
-        self.move_to(start_pos, z=self.safe_height, speed=speed, acceleration=acceleration) # move to first spot
-        self.move_to(z=self.grip_height[type])
-
-        self.set_gripper(255) # grip the piece
-
-        self.move_to(start_pos, z=self.safe_height)
-        self.move_to(end_pos, z=self.safe_height, speed=speed, acceleration=acceleration)
-        self.move_to(z=self.grip_height[type] + GRIP_RELEASE_HEIGHT)
-        
         
         self.set_gripper(self.get_gripper() - GRIP_RELEASE_OFFSET) # release the piece
         
+        # return to start postion
         self.move_to(z=self.safe_height)
-        self.move_to(self.start_position, speed=speed, acceleration=acceleration)
+        if move_to_start:
+            self.move_to(self.start_position, z=self.safe_height, speed=speed, acceleration=acceleration)
 
-    def move_smooth_path(self, steps, blend_radius=0.03, speed=None, acceleration=None):
+    def move_smooth_path___experimental(self, steps, blend_radius=0.03, speed=None, acceleration=None):
         
         if speed is None:
             speed = self.speed
@@ -447,7 +467,7 @@ class ChessBot:
         self.rtde_c.moveL(path)
         return current_pose
 
-    def mov_chess_piece_rotated3(self, type=None, start_pos=None, end_pos=None, blend_radius = 0.05):
+    def mov_chess_piece___experimental(self, type=None, start_pos=None, end_pos=None, blend_radius = 0.05):
         if self.pose[Z] < self.safe_height:
             self.move_to(z=self.safe_height)
 
@@ -476,135 +496,21 @@ class ChessBot:
             {'pose': self.start_position}, 
         ]
         self.move_smooth_path(path_steps3, blend_radius=blend_radius, speed=0.05) # move smoothly
-    
-    def align_piece(self, type=None, pos=None):
-        cur_pos = pos.copy()
-        
-
-        self.set_gripper(grip_size[type+"_alignment"] - GRIP_RELEASE_OFFSET, wait=False)
-
-        self.move_to(cur_pos, z = self.safe_height)
-        self.move_to(z=self.floor_height+0.002)
-
-        self.set_gripper(grip_size[type+"_alignment"])
-
-        self.move_to(z=self.safe_height)
-
-        # release slowly
-        self.set_gripper(grip_size[type+"_alignment"] - int(GRIP_REALIGNMENT_OFFSET*0.5))
-        time.sleep(0.5)
-        self.set_gripper(grip_size[type+"_alignment"] - int(GRIP_REALIGNMENT_OFFSET*0.75))
-        time.sleep(0.75)
-        self.set_gripper(grip_size[type+"_alignment"] - GRIP_REALIGNMENT_OFFSET)
-        time.sleep(1)
-        if type == "queen":
-            time.sleep(1)
-        self.set_gripper(grip_size[type+"_alignment"]) # get good grip again
-
-        self.move_to(z=self.release_lying_height[type])
-
-        self.set_gripper(grip_size[type+"_alignment"] - GRIP_RELEASE_OFFSET)
-
-        self.move_to(z=self.safe_height)
-
-    def align_piece_rotaion(self, type=None, pos=None):
-        cur_pos = pos.copy()
-        
-        self.set_gripper(grip_size[type+"_alignment"] - GRIP_RELEASE_OFFSET, wait=False)
-
-        self.move_to(cur_pos, z = self.safe_height)
-        self.move_to(z=self.floor_height+0.002)
-
-        self.set_gripper(grip_size[type+"_alignment"])
-
-        self.move_to(z=self.safe_height)
-
-        # rotate slowly
-        self.move_to(orientation = self.get_rotated_tcp_orientation(Rx=-90))
-
-        self.move_to(z=self.release_lying_height[type])
-
-        self.set_gripper(grip_size[type+"_alignment"] - GRIP_RELEASE_OFFSET)
-
-        self.move_to(z=self.safe_height)
-
-    def align_piece_rotaion3(self, type=None, start_pos=None, end_pos=None, lying = True, orientation=None):
-        if start_pos[Z] < self.safe_height:
-            self.move_to(z=self.safe_height)
-
-        #self.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET, wait=False)
-        self.set_gripper(140,wait=False)
-        if orientation is not None:
-            start_pos[3:6] = orientation
-        #mov and rotate partially
-        if lying:
-            
-            self.move_to(start_pos, z=self.safe_height)
-            self.move_to(start_pos, z=self.table_height+0.0015)
-            
-            
-            
-        else: #standing
-            cur_pos = [start_pos[X], start_pos[Y], self.grip_height[type]] + self.up_orientation
-            # later
-        
-        self.set_gripper(grip_size[type]-3) # grip the piece
-         
-
-        self.move_to(z=self.safe_height)
-
-        robot.move_to(cube_pose, z=self.safe_height)
-
-        # rotate slowly
-        #self.move_to(x=self.positions['c1'][X],y=self.positions['c1'][Y], z=self.safe_height)
-        self.move_to(orientation = self.get_rotated_tcp_orientation(Rx=-85))
-        
-
-        #self.move_to(x=self.free_platform[X], y=self.free_platform[Y], z=self.free_platform[Z] + 0.01)
-
-
-        #self.move_to(x=self.positions['a1'][X], y=self.positions['a1'][Y], z=self.safe_height)
-
-        #self.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET) # release
-
-        #self.move_to(z=self.safe_height)
 
     def camera_vector_to_robot_vector(self, camera_vector):
         R, t = estimate_transform(camera_points, robot_points)
         return list(map(float, R @ camera_vector + t)) + self.down_orientation
 
-    def get_dead_chess_piece(self):
+    @staticmethod
+    def weighted_avg(x, y, x_bias):
+        if isinstance(x, list):
+            return [weighted_avg(a, b, x_bias) for a, b in zip(x, y)]
+        return x*x_bias + y*(1-x_bias)
+
+    def pick_up_dead_piece(self, type, state, end_pos):
+        ############################################################### add knight support
+        # get robot postions from the interactable camera
         base_point, head_point = get_base_and_head_camera_points()
-        print([float(base_point[0]), float(base_point[1]), float(base_point[2])])
-        print([float(head_point[0]), float(head_point[1]), float(head_point[2])])
-        
-
-        
-        R, t = estimate_transform(camera_points, robot_points)
-        base_robot =  R @ base_point + t
-        head_robot = R @ head_point + t
-
-        # fix alignment
-        base_robot[Y]-=0.01
-        head_robot[Y]-=0.01
-
-        # calculate middle position
-        dx = head_robot[0] - base_robot[0]
-        dy = head_robot[1] - base_robot[1]
-        dz = math.degrees(math.atan2(dx, dy))
-
-        XYZ = [0.5*(head_robot[0] + base_robot[0]), 0.5*(head_robot[1] + base_robot[1]), 0]
-        robot.align_piece_rotaion2(type='pawn', start_pos=XYZ + robot.down_orientation, 
-                                    end_pos=robot.positions['a2'], orientation = robot.get_rotated_tcp_orientation(Rz=dz+90),
-                                    lying = True)
-
-    def get_dead_chess_piece3(self, type):
-        base_point, head_point = get_base_and_head_camera_points()
-        #print([float(base_point[0]), float(base_point[1]), float(base_point[2])])
-        #print([float(head_point[0]), float(head_point[1]), float(head_point[2])])
-        
-
-        
         R, t = estimate_transform(camera_points, robot_points)
         base_robot =  R @ base_point + t
         head_robot = R @ head_point + t
@@ -613,63 +519,113 @@ class ChessBot:
         base_robot[Y]-=0.01
         head_robot[Y]-=0.01
         base_robot[X]+=0.01
-        base_robot[X]+=0.01
+        head_robot[X]+=0.01
 
         # calculate middle position
         dx = head_robot[0] - base_robot[0]
         dy = head_robot[1] - base_robot[1]
         dz = math.degrees(math.atan2(dx, dy))
 
-        XYZ = [0.5*(head_robot[0] + base_robot[0]), 0.5*(head_robot[1] + base_robot[1]), 0]
+        if state == 'standing':
+            bias = 0.5
+        elif type == 'bishop':
+            bias = 0.5
+        elif type == 'knight':
+            bias = 0.7
+        else:
+            bias = 0.6
+        middle_position = [
+            *ChessBot.weighted_avg(head_robot[:2], base_robot[:2], bias),
+            0,
+            *self.get_rotated_tcp_orientation(Rz=dz+90)
+        ]
         
-        orientation = robot.get_rotated_tcp_orientation(Rz=dz+90)
-        lying = True
-
-        if XYZ[Z] < self.safe_height:
+        # fix height
+        if middle_position[Z] < self.safe_height:
             self.move_to(z=self.safe_height)
 
-        #self.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET, wait=False)
-        self.set_gripper(140,wait=False)
-        if orientation is not None:
-            XYZ[3:6] = orientation
-        #mov and rotate partially
-        if lying:
-            
-            self.move_to(XYZ, z=self.safe_height)
-            self.move_to(XYZ, z=self.table_height+0.0015)
-            
-            
-            
-        else: #standing
-            cur_pos = [XYZ[X], XYZ[Y], self.grip_height[type]] + self.up_orientation
-            # later
-        
-        self.set_gripper(grip_size[type]) # grip the piece
-         
+        self.set_gripper(HALF_OPENED,wait=False)
 
+        self.move_to(middle_position, z=self.safe_height)
+        if state == 'lying':
+            self.move_to(z=self.table_height+0.0015)
+
+            self.set_gripper(CLOSED) # grip the piece
+
+            self.move_to(z=self.safe_height)
+            self.move_to(cube_pose, z=self.safe_height)
+
+            # rotate slowly
+            self.move_to(orientation = self.get_rotated_tcp_orientation(Rx=-85))
+            self.move_to(z=cube_pose[Z] - self.floor_height + self.grip_height[type] + 0.01)
+            
+            # release standing piece
+            #self.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET) 
+            self.set_gripper(self.get_gripper() - GRIP_RELEASE_OFFSET)
+
+            # straighten the arm back
+            self.move_to(cube_pose,dx=0.01, z=cube_pose[Z] - self.floor_height + self.grip_height[type]- 0.01) 
+
+            self.set_gripper(CLOSED) # grip the piece
+
+            self.move_to(dz=0.05) # raise the arm
+
+        elif state == 'standing':
+            ##################################################### add knight support
+            self.move_to([middle_position[X], middle_position[Y], self.grip_height[type]+OFFSET_TO_TABLE_HEIGHT] + self.down_orientation)
+            
+            self.set_gripper(CLOSED)
+            
+            self.move_to(z=self.safe_height)
+            
+        else:
+            print("error on state")
+            return 
+            
+        
+        # put back on the chess board
+        self.move_to(
+            self.positions[end_pos],
+            z=self.safe_height,
+            orientation =
+                self.get_rotated_tcp_orientation(Rz=90)
+                if state == 'lying' and type == 'knight' and self.get_gripper() < grip_size['knight']-7
+                else None
+        )
+        self.move_to(z=self.grip_height[type] + GRIP_RELEASE_HEIGHT)
+        #self.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET)
+        self.set_gripper(open_by=GRIP_RELEASE_OFFSET)
         self.move_to(z=self.safe_height)
-
-        robot.move_to(cube_pose, z=self.safe_height)
-
-        # rotate slowly
-        self.move_to(orientation = self.get_rotated_tcp_orientation(Rx=-85))
+        self.move_to(self.start_position, z=self.safe_height)
         
-        self.move_to(z=cube_pose[Z] - self.floor_height + self.grip_height[type] + 0.01)
-        self.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET)
-        
-        self.move_to(cube_pose,dx=0.01, z=cube_pose[Z] - self.floor_height + self.grip_height[type]- 0.01)
-        #self.move_to(dx=0.01)
-        self.set_gripper(grip_size[type])
-        self.move_to(dz=0.05)
-        self.move_to(self.positions["a1"], z=self.safe_height)
+    def capture_piece(self, type, start_pos, end_pos = None, rz_start=None, move_to_start=True):
+        if end_pos is None:
+            end_pos = list(map(float, get_head_camera_point())) + self.down_orientation
+        start_pos = self.normalize_pos(start_pos)
+        end_pos = self.normalize_pos(end_pos)
+        self.move_to(start_pos, z=self.safe_height, orientation=self.down_orientation)
+        self.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET,wait=False) #  open the gripper
         self.move_to(z=self.grip_height[type])
-        self.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET)
+        self.set_gripper(CLOSED)
         self.move_to(z=self.safe_height)
-        
-       
+        #print(f"{end_pos = }")
+        self.move_to(end_pos, z=self.safe_height)
+        self.move_to(z=self.grip_height[type]+OFFSET_TO_TABLE_HEIGHT)
+        self.set_gripper(open_by=GRIP_RELEASE_OFFSET)
+        self.move_to(z=self.safe_height)
+        if move_to_start:
+            self.move_to(self.start_position, z=self.safe_height)
 
+    def move_and_capture_piece(self, capturer, captured, empty_pos=None):
+        (capturer_type, capturer_pos) = capturer
+        (captured_type, captured_pos) = captured
+        capturer_pos = self.normalize_pos(capturer_pos)
+        captured_pos = self.normalize_pos(captured_pos)
 
-########################calibration#########################
+        self.capture_piece(captured_type, captured_pos, empty_pos, move_to_start=False)
+        self.mov_chess_piece(capturer_type, capturer_pos, captured_pos)
+
+######################## zed camera #########################
 def estimate_transform(camera_points, robot_points):
     """
     camera_points: Nx3 numpy array
@@ -748,15 +704,15 @@ def get_base_and_head_camera_points():
                 x, y = clicked_point
                 err, point3d = point_cloud.get_value(x, y)
                 if err == sl.ERROR_CODE.SUCCESS:
-                    X, Y, Z = point3d[:3]
-                    if np.isfinite(X) and np.isfinite(Y) and np.isfinite(Z):
+                    X_, Y_, Z_ = point3d[:3]
+                    if np.isfinite(X_) and np.isfinite(Y_) and np.isfinite(Z_):
                         print(f"Pixel ({x}, {y})")
-                        print(f"3D point: X={X:.3f}, Y={Y:.3f}, Z={Z:.3f} meters")
+                        print(f"3D point: X={X_:.3f}, Y={Y_:.3f}, Z={Z_:.3f} meters")
                         if(base_point is None):
-                            base_point = [X, Y, Z]
+                            base_point = [X_, Y_, Z_]
                             print(f"base_point is set")
                         else:
-                            head_point = [X, Y, Z]
+                            head_point = [X_, Y_, Z_]
                             print(f"head_point is set")
                     else:
                         print("Invalid depth at this pixel")
@@ -778,52 +734,121 @@ def get_base_and_head_camera_points():
 
     return base_point, head_point
 
+def get_head_camera_point():
+    global clicked_point, point_cloud
+    base_point = None
+    head_point = None
+
+    # Create camera
+    zed = sl.Camera()
+    init_params = sl.InitParameters()
+    init_params.depth_mode = sl.DEPTH_MODE.ULTRA
+    init_params.coordinate_units = sl.UNIT.METER
+
+    if zed.open(init_params) != sl.ERROR_CODE.SUCCESS:
+        print("Failed to open ZED")
+        return
+
+    image = sl.Mat()
+    runtime_params = sl.RuntimeParameters()
+    cv2.namedWindow("ZED")
+    cv2.setMouseCallback("ZED", mouse_callback)
+
+    while head_point==None:
+        if zed.grab(runtime_params) == sl.ERROR_CODE.SUCCESS:
+            # Left image
+            zed.retrieve_image(image, sl.VIEW.LEFT)
+            # Point cloud
+            zed.retrieve_measure(
+                point_cloud,
+                sl.MEASURE.XYZ
+            )
+            frame = image.get_data()
+            if clicked_point is not None:
+                x, y = clicked_point
+                err, point3d = point_cloud.get_value(x, y)
+                if err == sl.ERROR_CODE.SUCCESS:
+                    X_, Y_, Z_ = point3d[:3]
+                    if np.isfinite(X_) and np.isfinite(Y_) and np.isfinite(Z_):
+                        print(f"Pixel ({x}, {y})")
+                        print(f"3D point: X={X_:.3f}, Y={Y_:.3f}, Z={Z_:.3f} meters")
+                        if(False):
+                            base_point = [X_, Y_, Z_]
+                            print(f"base_point is set")
+                        else:
+                            head_point = [X_, Y_, Z_]
+                            print(f"head_point is set")
+                    else:
+                        print("Invalid depth at this pixel")
+
+                clicked_point = None
+            cv2.imshow("ZED", frame)
+        key = cv2.waitKey(1)
+
+        if key == 27:  # ESC
+            break
+
+    zed.close()
+
+    cv2.destroyAllWindows()
+
+    
+    R, t = estimate_transform(camera_points, robot_points)
+    head_robot = R @ head_point + t
+
+    # fix alignment
+    head_robot[Y]-=0.01
+    head_robot[X]+=0.01
+
+    return head_robot
 
 
 
-if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1].lower() == "reset":
-        reset_gripper()
 
-    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1, H8=H8) as robot:
+def main():
+    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_, speed=0.5) as robot:
        # מלך, מלכה, רץ, פרש, צריח, רגלי = king, queen, bishop, knight, rook, pawn
         print("starting session")
-        
         robot.move_to(robot.start_position, z=robot.safe_height)
         
-        #base, head = get_base_and_head_camera_points()
-        #robot.move_to(robot.camera_vector_to_robot_vector(base), dz=0.01)
+        #robot.pick_up_dead_piece("queen", "lying", "a1")
+
+        for i in range(10):
+            print(get_head_camera_point())
+        
+        
         
 
-        
-        #robot.mov_chess_piece_grip_modify('pawn', 'b1', 'b3', speed=0.5)
-        
-        # base_point, head_point = get_base_and_head_camera_points()        
-        # R, t = estimate_transform(camera_points, robot_points)
-        # base_robot =  R @ base_point + t
-        # head_robot = R @ head_point + t
-        # # fix alignment
-        # #base_robot[Y]-=0.01
-        # #head_robot[Y]-=0.01
-        # # calculate middle position
-        # dx = head_robot[0] - base_robot[0]
-        # dy = head_robot[1] - base_robot[1]
-        # dz = math.degrees(math.atan2(dx, dy))
-        # XYZ = [0.5*(head_robot[0] + base_robot[0]), 0.5*(head_robot[1] + base_robot[1]), 0]
-        # robot.align_piece_rotaion3(type='queen', start_pos=XYZ + robot.down_orientation, 
-        #                             end_pos=robot.positions['a2'], orientation = robot.get_rotated_tcp_orientation(Rz=dz+90),
-        #                             lying = True)
-        robot.get_dead_chess_piece3("queen")
+        robot.move_to(robot.start_position, z=robot.safe_height)
+        print("end of session")
+
         
         
-        print(robot.positions['a1'][0:3])
-        print(robot.positions['c2'][0:3])
-        print(robot.positions['e3'][0:3])
-        print(robot.positions['f6'][0:3])
-        print(robot.positions['h7'][0:3])
-        print(robot.positions['h3'][0:3])
-        print(robot.positions['b7'][0:3])
-        print(robot.positions['c6'][0:3])
+if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        if sys.argv[1].lower() == "reset":
+            reset_gripper()
+        if sys.argv[1].lower() == "start":
+            move_to_start_postion()
+        if sys.argv[1].lower() == "print":
+            print_position()
+        if sys.argv[1].lower() == "close":
+            grip_close()
+        if sys.argv[1].lower() == "open":
+            grip_open()
+    else:
+        main()
+
+
+
+#print(robot.positions['a1'][0:3])
+        #print(robot.positions['c2'][0:3])
+        #print(robot.positions['e3'][0:3])
+        #print(robot.positions['f6'][0:3])
+        #print(robot.positions['h7'][0:3])
+        #print(robot.positions['h3'][0:3])
+        #print(robot.positions['b7'][0:3])
+        #print(robot.positions['c6'][0:3])
 
         # with open("output", "a") as f:
         #     for i in range(0, 8 + 11 + 1, 2):
@@ -833,124 +858,6 @@ if __name__ == "__main__":
         #         print(f"point {i}:", list(map(float, base)), file=f)
         #         print(f"point {i + 1}:", list(map(float, head)), file=f)
         #         f.flush()
-        
 
-        #[0.08205673493996721, -0.6753187762204925, 0.025300681966506575], #a1
-        #[0.04006300568110827, -0.5963315088823268, 0.025300681966506575], #c2
-        #[-0.001930723577750662, -0.517344241544161, 0.025300681966506575], #e3
-        #[-0.12291172017477514, -0.48035070346485403, 0.025300681966506575], #f6
-        #[-0.16490544943363408, -0.4013634361266884, 0.025300681966506575], #h7
-        #[-0.0049308382854820615, -0.3973632831830471, 0.025300681966506575], #h3
-        #[-0.15890522001817128, -0.6413253528489165, 0.025300681966506575], #b7
-        #[-0.11991160546704374, -0.6003316618259681, 0.025300681966506575] #c6
-        
-        
-
-
-
-
-        robot.move_to(robot.start_position, z=robot.safe_height)
-
-        print("end of session")
-
-
-
-
-        '''
-[0.07165449155305594, -0.8689120342824104, 0.00761849382290658], #1
-[0.0746530566617607, -0.7953362242005896, 0.004351846959708611], #2
-[0.07251428629002046, -0.7563871277745808, 0.004090195582639206], #3
-[0.0297674262951436, -0.7946321237172691, 0.004359263137356434], #4
-[0.002640284170454068, -0.8300784899379653, 0.005978647005982551], #5
-[-0.03088749462845628, -0.8305381263150142, 0.006450310317636543], #6
-[-0.07661470188311771, -0.7625228718765196, 0.005115601503159012], #7
-[-0.10240466056378457, -0.8607379650664497, 0.005362619851522338], #8
-[-0.10241297195056764, -0.7979398917752542, 0.0042431200006042835], #9
-[-0.13430503939697003, -0.8594993130056128, 0.004450275407329174], #10
-[-0.1462758604281513, -0.8000864040037845, 0.00473211183153302], #11
-        '''
-
-
-
-
-
-
-
-
-
-
-
-        #robot.align_piece('king', robot.positions['a1'])
-        ##robot.align_piece('queen', robot.positions['b1']) not working
-        #robot.align_piece_rotaion('queen', robot.positions['b1'])
-        #robot.align_piece('bishop', robot.positions['c1'])
-        #robot.align_piece('knight', robot.positions['d1'])
-        #robot.align_piece('rook', robot.positions['e1'])
-        #robot.align_piece('pawn', robot.positions['f1'])
-        
-        #robot.mov_chess_piece('king', 'a1', 'a3', speed=0.5)
-        #robot.mov_chess_piece('queen', 'b1', 'b3', speed=0.5)
-        #robot.mov_chess_piece('bishop', 'c1', 'c3', speed=0.5)
-        #robot.mov_chess_piece('knight', 'd1', 'd3', speed=0.5)
-        #robot.mov_chess_piece('rook', 'e1', 'e3', speed=0.5)
-        #robot.mov_chess_piece('pawn', 'f1', 'f3', speed=0.5)
-        
-        #print(robot.pose)
-        
-        '''
-        d1 = [0.031, 0.055, 0.912 ]
-        d1_ = [0.022, 0.046, 0.913]
-        a1_ = [-0.096, 0.053, 0.909]
-        h8_ = [0.188,-0.126, 1.116 ]
-        tmp = [-0.203, 0.008, 0.994]
-        base_point, head_point = get_base_and_head_camera_points()
-        
-        R, t = estimate_transform(camera_points, robot_points)
-        base_robot =  R @ base_point + t
-        head_robot = R @ head_point + t
-
-        # fix alignment
-        base_robot[Y]-=0.01
-        head_robot[Y]-=0.01
-
-        dx = head_robot[0] - base_robot[0]
-        dy = head_robot[1] - base_robot[1]
-        dz = math.degrees(math.atan2(dx, dy))
-        
-        tmp_pos = robot.pose
-        tmp_pos[RZ] = 0
-
-        print(dx, dy, dz)
-        print(base_robot)
-        print(head_robot)
-        #robot.move_to(orientation = robot.get_rotated_tcp_orientation(Rz=dz + 90))
-        
-
-        XY = [0.5*(head_robot[0] + base_robot[0]), 0.5*(head_robot[1] + base_robot[1])]
-        #robot.move_to(robot.pose[0:3] + tmp_pos)
-
-
-        XYZ = R @ tmp + t
-        
-        position = [XY[0], XY[1], 0]
-        
-        
-
-        pose = [float(base_robot[0]), float(base_robot[1])-0.01, float(robot.table_height)] + robot.down_orientation
-        
-        #robot.move_to(pose)
-        
-        robot.align_piece_rotaion2(type='pawn', start_pos=position + robot.down_orientation, 
-                                    end_pos=robot.positions['a2'], orientation = robot.get_rotated_tcp_orientation(Rz=dz+90) ,lying = True)
-        
-       
-        
-        
-
-
-        '''
-        
-        
-
-
-
+    #robot.pick_up_dead_piece("queen", "lying", "a1")
+    #robot.move_and_capture_piece(("pawn", "b2"), ("queen","c3"))
