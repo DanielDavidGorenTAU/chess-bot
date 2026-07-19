@@ -746,6 +746,7 @@ def get_head_camera_point():
     init_params = sl.InitParameters()
     init_params.depth_mode = sl.DEPTH_MODE.ULTRA
     init_params.coordinate_units = sl.UNIT.METER
+    init_params.camera_resolution = sl.RESOLUTION.HD2K
 
     if zed.open(init_params) != sl.ERROR_CODE.SUCCESS:
         print("Failed to open ZED")

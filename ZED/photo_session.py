@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 
 # Folder where images will be saved (inside project)
-SAVE_DIR = "zed_board_images"
+SAVE_DIR = "zed_board_images_2"
 
 # Create folder if it doesn't exist
 os.makedirs(SAVE_DIR, exist_ok=True)

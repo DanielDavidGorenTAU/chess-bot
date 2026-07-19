@@ -9,11 +9,18 @@ def main():
     init_params = sl.InitParameters()
     init_params.depth_mode = sl.DEPTH_MODE.ULTRA
     init_params.coordinate_units = sl.UNIT.MILLIMETER
-    init_params.camera_resolution = sl.RESOLUTION.HD720
+    init_params.camera_resolution = sl.RESOLUTION.HD2K
 
     if zed.open(init_params) != sl.ERROR_CODE.SUCCESS:
         print("Failed to open camera")
         return
+
+    brightness = 8  # Usually 0-8
+
+    zed.set_camera_settings(
+        sl.VIDEO_SETTINGS.BRIGHTNESS,
+        brightness
+    )
 
     runtime = sl.RuntimeParameters()
 
