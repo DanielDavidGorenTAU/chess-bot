@@ -817,6 +817,11 @@ def main():
         
         robot.move_to(robot.positions['a1'], dz = 0.005)
         #robot.pick_up_dead_piece('queen', 'lying', 'g5')
+        robot.mov_chess_piece(
+            type="queen",
+            start_pos="d1",
+            end_pos="h5"
+        )
 
 
 

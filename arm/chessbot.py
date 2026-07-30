@@ -16,8 +16,8 @@ AYAL_IP = "192.168.57.101"
 
 A1_URI = [0.08205673493996721, -0.6753187762204925, 0.024844870270488956, 2.247469008346155, -2.146149708890044, 0]
 H8_URI = [-0.20489910222067206, -0.4023634743625998, 0.025756493662524194, 2.247613176209329, -2.1463343846561838, 0]
-A1_AYAL = [-0.6600198965072145, -0.1963713032444302, -0.2635282297419826, 0, np.pi, 0.022472703400519555]
-H8_AYAL = [-0.31116179330607624, 0.1341971801261586, -0.2622676541871805, 0, np.pi, 0.02247581820845158]
+A1_AYAL = [-0.6380040110576192, -0.2531378443418727, -0.260572163219061, 0, np.pi, 0.022472703400519555]
+H8_AYAL = [-0.2987299395625931, 0.0842661900205246, -0.26160276149474504, 0, np.pi, 0.02247581820845158]
 rad = math.atan2(H8_AYAL[1] - A1_AYAL[1], H8_AYAL[0] - A1_AYAL[0])
 #A1_AYAL[5] = rad-np.pi/4
 #H8_AYAL[5] = rad-np.pi/4
@@ -832,11 +832,11 @@ def main():
        # מלך, מלכה, רץ, פרש, צריח, רגלי = king, queen, bishop, knight, rook, pawn
         print("starting session")
         #robot.rtde_c.moveJ(BASE_URI, 1, 0.5)
-        robot.move_to(robot.start_position, z=robot.sky_height)
+        #robot.move_to(robot.start_position, z=robot.sky_height)
         #robot.move_to(robot.positions['h8'])
         #robot.pick_up_dead_piece("queen", "lying", "a1")
         #robot.mov_chess_piece("pawn", "h6", "a8")
-        
+        robot.move_and_capture_piece(("pawn", "b2"), ("queen","c3"))
         #robot.pick_up_dead_piece("queen", "lying", "c1")
         #robot.move_to(orientation = robot.down_orientation)
         #robot.move_to(orientation = robot.get_rotated_tcp_orientation(Rx = -85))
