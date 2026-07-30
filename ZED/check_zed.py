@@ -32,6 +32,7 @@ def main():
     # Open the camera
     err = zed.open(init_params)
     if err > sl.ERROR_CODE.SUCCESS:
+        print(f"Error: {err}")
         exit(1)
 
     # Get camera information (ZED serial number)
