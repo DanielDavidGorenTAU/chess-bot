@@ -219,3 +219,6 @@ __marimo__/
 zed_board_images_3.tar.gz
 zed_board_images_3.tar.gz
 zed_board_images_3/
+yolo/predictions/
+yolo11n.pt
+yolo26n.pt
