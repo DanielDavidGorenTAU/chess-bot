@@ -2,22 +2,33 @@ from ultralytics import YOLO
 import glob
 import os
 from fen_translator import BinaryToFenTranslator, Translator
+from ZED.cameralib import Camera
 
 # Load model
 #model = YOLO("/home/checkmate/Documents/chess-bot/runs/detect/runs/train/chess_board-3/weights/best.pt") #unary
 #model = YOLO("/home/checkmate/Documents/chess-bot/runs/detect/chess_training/run_1/weights/best.pt") #advanced
 model = YOLO("/home/checkmate/Documents/chess-bot/runs/detect/runs/train/chess_board-4/weights/best.pt") #binary
 image_paths = glob.glob("/home/checkmate/Documents/chess-bot/test_yolo_board/EN_PASSANT_D5_C6.png")
+BINARY = "binary"
+UNARY = "unary"
+ADVANCED = "advanced"
 MODEL_PATHS = {
-    "binary": "/home/checkmate/Documents/chess-bot/runs/detect/runs/train/chess_board-4/weights/best.pt",
-    "unary": "/home/checkmate/Documents/chess-bot/runs/detect/runs/train/chess_board-3/weights/best.pt",
-    "advanced": "/home/checkmate/Documents/chess-bot/runs/detect/chess_training/run_1/weights/best.pt"
+    BINARY: "/home/checkmate/Documents/chess-bot/runs/detect/runs/train/chess_board-4/weights/best.pt",
+    UNARY: "/home/checkmate/Documents/chess-bot/runs/detect/runs/train/chess_board-3/weights/best.pt",
+    ADVANCED: "/home/checkmate/Documents/chess-bot/runs/detect/chess_training/run_1/weights/best.pt"
 }
-OUTPUT_DIR = "/home/checkmate/Documents/chess-bot/yolo/predictions"
+MODEL_CONF = {
+    BINARY: 0.6,
+    UNARY: 0.6,
+    ADVANCED: 0.25
+}
+
+PREDICTION_OUTPUT_DIR = "/home/checkmate/Documents/chess-bot/yolo/predictions"
+IMAGE_OUTPUT_DIR = "/home/checkmate/Documents/chess-bot/yolo/game_photos"
 
 # Create only if it doesn't already exist
-if not os.path.isdir(OUTPUT_DIR):
-    os.makedirs(OUTPUT_DIR)
+if not os.path.isdir(PREDICTION_OUTPUT_DIR):
+    os.makedirs(PREDICTION_OUTPUT_DIR)
 
 for image_path in image_paths:
     results = model(image_path, conf=0.6)
@@ -26,7 +37,7 @@ for image_path in image_paths:
     base_name = os.path.splitext(os.path.basename(image_path))[0]
 
     # Save coordinates
-    txt_path = os.path.join(OUTPUT_DIR, base_name + ".txt")
+    txt_path = os.path.join(PREDICTION_OUTPUT_DIR, base_name + ".txt")
 
     with open(txt_path, "w") as f:
         for box in result.boxes:
@@ -41,7 +52,7 @@ for image_path in image_paths:
             f.write(f"{label} {center_x:.1f} {baseline_y:.1f}\n")
 
     # Save annotated image
-    output_image = os.path.join(OUTPUT_DIR, os.path.basename(image_path))
+    output_image = os.path.join(PREDICTION_OUTPUT_DIR, os.path.basename(image_path))
     result.save(filename=output_image)
 
 
@@ -52,7 +63,7 @@ class YoloModel:
     Wrapper class for loading and running predictions with Ultralytics YOLO models.
     """
 
-    def __init__(self, model_name: str = "binary", output_dir: str = OUTPUT_DIR, conf: float = 0.25):
+    def __init__(self, model_name: str = BINARY, camera: Camera = None):
         """
         Initializes the YoloModel wrapper.
 
@@ -60,17 +71,15 @@ class YoloModel:
         :param output_dir: Directory where prediction results will be saved.
         :param conf: Default confidence threshold for predictions (0.0 to 1.0).
         """
-        self.conf: float = conf
-        self.output_dir: str = output_dir
+        self.conf: float = MODEL_CONF[BINARY]
         self.model_path: str = ""
         self.model: YOLO = None
         self.translator: Translator = BinaryToFenTranslator()  # Default translator for binary model
-        self.camera = None  # Placeholder for camera object if needed in the future
-        
+        self.camera: Camera = camera          
         # Load the model via the private method
-        self._set_model_path(model_name)
+        self._set_model(model_name)
 
-    def _set_model_path(self, name: str):
+    def _set_model(self, name: str):
         """
         Updates the model path field and loads/reloads the YOLO model instance.
 
@@ -81,6 +90,7 @@ class YoloModel:
         
         self.model_path = MODEL_PATHS[name]
         self.model = YOLO(self.model_path)
+        self.conf = MODEL_CONF[name]
 
     def _predict(self)-> str:
         """
@@ -89,14 +99,14 @@ class YoloModel:
         """
         if self.model is None:
             raise RuntimeError("Model is not loaded. Ensure a valid model path is set.")
-        image_path = self.camera.capture_image()  # Capture image from camera
+        image_path = self.camera.take_photo(IMAGE_OUTPUT_DIR)  # Capture image from camera
         results = self.model(image_path, conf=self.conf)
         result = results[0]
 
         base_name = os.path.splitext(os.path.basename(image_path))[0]
 
         # Save coordinates
-        txt_path = os.path.join(self.output_dir, base_name + ".txt")
+        txt_path = os.path.join(PREDICTION_OUTPUT_DIR, base_name + ".txt")
 
         with open(txt_path, "w") as f:
             for box in result.boxes:
@@ -111,7 +121,7 @@ class YoloModel:
                 f.write(f"{label} {center_x:.1f} {baseline_y:.1f}\n")
 
         # Save annotated image
-        output_image = os.path.join(self.output_dir, os.path.basename(image_path))
+        output_image = os.path.join(PREDICTION_OUTPUT_DIR, os.path.basename(image_path))
         result.save(filename=output_image)
         return txt_path  # Return the path to the saved coordinates file for further processing
     

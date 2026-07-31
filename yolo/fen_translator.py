@@ -1,46 +1,13 @@
 from abc import ABC, abstractmethod
-from reactions import ReactionWaiter, ConsoleEnterReaction
 import json
 import cv2
 import numpy as np
+from common.enums_and_dicts import *
+from common.utils import *
 
 
 CORNERS_FILE = "/home/checkmate/Documents/chess-bot/corners.json"
-# Step 1 & 2 mapping: FEN piece -> integer index (0 to 11)
-FEN_TO_INT = {
-    'b': 0,   # black-bishop
-    'k': 1,   # black-king
-    'n': 2,   # black-knight
-    'p': 3,   # black-pawn
-    'q': 4,   # black-queen
-    'r': 5,   # black-rook
-    'B': 6,   # white-bishop
-    'K': 7,   # white-king
-    'N': 8,   # white-knight
-    'P': 9,   # white-pawn
-    'Q': 10,  # white-queen
-    'R': 11   # white-rook
-}
-INT_TO_FEN = {
-    0: 'b',  # black-bishop
-    1: 'k',  # black-king
-    2: 'n',  # black-knight
-    3: 'p',  # black-pawn
-    4: 'q',  # black-queen
-    5: 'r',  # black-rook
-    6: 'B',  # white-bishop
-    7: 'K',  # white-king
-    8: 'N',  # white-knight
-    9: 'P',  # white-pawn
-    10: 'Q', # white-queen
-    11: 'R'  # white-rook
-}
 
-# Step 3 mapping: Color label -> integer index
-COLOR_TO_INT = {
-    "black": 0,
-    "white": 1
-}
 
 class Translator(ABC):
 
@@ -108,7 +75,7 @@ class Translator(ABC):
         
         return max(0, min(7, row)), max(0, min(7, col))
 
-    def _grid_to_fen(self, board_grid, active_turn="w"):
+    def _grid_to_fen(self, board_grid, active_turn=1):
         """
         Converts an 8x8 integer grid (0-11, -1) into a FEN string.
         """
@@ -128,9 +95,9 @@ class Translator(ABC):
             if empty_count > 0:
                 row_str += str(empty_count)
             fen_rows.append(row_str)
-        
+        char_active_turn = "b" if active_turn == 0 else "w"
         board_fen = "/".join(fen_rows)
-        return f"{board_fen} {active_turn} - - 0 1"
+        return f"{board_fen} {char_active_turn} - - 0 1"
 
     @abstractmethod
     def translate_to_fen(self, old_fen: str, detections_file: str) -> str:
@@ -184,8 +151,6 @@ class BinaryToFenTranslator(Translator):
         old_board_grid, active_turn = self._parse_fen_to_int_grid(old_fen)
         detected_color_grid = self._create_detected_grid(detections_file, CORNERS_FILE)
         self._debug_boards([old_board_grid, detected_color_grid])
-
-        new_board_grid = [[None for _ in range(8)] for _ in range(8)]
 
         moved_source=[]
         moved_target=[]
@@ -264,4 +229,4 @@ class BinaryToFenTranslator(Translator):
             
         else:
             print("Error: Unexpected move scenario.")
-        return self._grid_to_fen(old_board_grid)
+        return self._grid_to_fen(old_board_grid, 1-active_turn)
