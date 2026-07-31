@@ -30,25 +30,61 @@ class Camera:
         # Let auto exposure stabilize
         for _ in range(30):
             self.zed.grab()
+
+    def _take_photo(self, image_mat):
+        """
+        Private method, ZED takes the actual photo
+        """
+        if self.zed.grab() != sl.ERROR_CODE.SUCCESS:
+            raise RuntimeError("Failed to grab image from ZED camera.")
+
+        self.zed.retrieve_image(image_mat, sl.VIEW.LEFT)
+
+        # Convert BGRA -> BGR
+        frame = image_mat.get_data()    
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
+        return frame
+
+    def _save_photo(self, output_dir:str, frame) -> str:
+        """
+        Private method, Saves photo at the specified dir
+        """
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
+        image_path = os.path.join(output_dir, f"zed_{timestamp}.png")
+
+        if not cv2.imwrite(image_path, frame):
+            raise RuntimeError(f"Failed to save image to {image_path}")
+        print(f"Saved {image_path}")
+
+        return os.path.abspath(image_path)
+
+    def take_photo(self, output_dir: str) -> str:
+        """
+        Takes a single photo with the ZED camera, saves it in output_dir,
+        and returns the full path to the saved image.
+        """
+        os.makedirs(output_dir, exist_ok=True)
+
+        image_mat = sl.Mat()
+
+        frame = self._take_photo(image_mat)
+        file_path = self._save_photo(output_dir, frame)
+        return file_path
+
+
+
     
     def shoot_many(self, output_dir):
         os.makedirs(output_dir, exist_ok=True)
 
-        image = sl.Mat()
+        image_mat = sl.Mat()
 
         print("Press ENTER to save an image.")
         print("Press 'q' to quit.")
 
 
         while True:
-            if self.zed.grab() != sl.ERROR_CODE.SUCCESS:
-                return
-
-            self.zed.retrieve_image(image, sl.VIEW.LEFT)
-
-            # Convert BGRA -> BGR (fix color issue)
-            frame = image.get_data()
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
+            frame = self._take_photo(image_mat)
 
             cv2.imshow("ZED Camera", frame)
 
@@ -56,10 +92,7 @@ class Camera:
 
             # ENTER saves image
             if key == 13:
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
-                filename = os.path.join(output_dir, f"zed_{timestamp}.png")
-                cv2.imwrite(filename, frame)
-                print(f"Saved {filename}")
+                self._save_photo(output_dir, frame)
 
             # q quits
             elif key == ord('q'):
