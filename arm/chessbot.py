@@ -10,6 +10,7 @@ from scipy.spatial.transform import Rotation
 import cv2
 import pyzed.sl as sl
 import math
+from common.enums_and_dicts import PieceType
 
 URI_IP = "192.168.56.101"
 AYAL_IP = "192.168.57.101"
@@ -61,12 +62,12 @@ robot_points = np.array([
 ])
 
 grip_size = {
-    "queen": 179,  # מלכה
-    "pawn": 196,   # רגלי
-    "king": 176,   # מלך
-    "rook": 182,   # צריח
-    "knight": 204, # פרש
-    "bishop": 190, # רץ
+    PieceType.QUEEN: 179,  # מלכה
+    PieceType.PAWN: 196,   # רגלי
+    PieceType.KING: 176,   # מלך
+    PieceType.ROOK: 182,   # צריח
+    PieceType.KNIGHT: 204, # פרש
+    PieceType.BISHOP: 190, # רץ
 }
 
 X, Y, Z, RX, RY, RZ = 0,1,2,3,4,5
@@ -112,37 +113,37 @@ def reset_gripper(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT):
                 pass
     sys.exit(0)
 def move_to_start_postion():
-    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
+    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
         robot.move_to(robot.start_position, z=robot.safe_height)
     sys.exit(0)
 def grip_close():
-    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
+    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
         robot.set_gripper(CLOSED)
     sys.exit(0)
 def grip_open():
-    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
+    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
         robot.set_gripper(OPENED)
     sys.exit(0)
 def print_position():
-    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
+    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
         print(robot.pose[:])
     sys.exit(0)
 def align_position():
-    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
+    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
         robot.rtde_c.moveJ(BASE_EYAL, 1, 0.5)
     sys.exit(0)
 def get_grip():
-    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
+    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
         print(robot.get_gripper())
     sys.exit(0)
 def print_joints():
-    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
+    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
         print(list(robot.rtde_r.getActualQ()))
     sys.exit(0)
 
 
 
-class ChessBot:
+class RobotHardware:
     def __init__(self, robot_ip=None, base_tcp_port=None, speed=0.1, acceleration=0.1, A1 = None, H8 = None):
         self.robot_ip = robot_ip
         self.base_tcp_port = base_tcp_port
@@ -217,26 +218,26 @@ class ChessBot:
         self.start_position = self.move_on_chessboard(self.positions['a5'], right = -CELL_LENGTH/2, up = -CELL_LENGTH/2)
         self.start_position[Z] = self.sky_height
 
-        self.grip_height["queen"] = self.floor_height + 0.04
-        self.grip_height["pawn"] = self.floor_height + 0.025 
-        self.grip_height["king"] = self.floor_height + 0.04
-        self.grip_height["rook"] = self.floor_height + 0.025
-        self.grip_height["knight"] = self.floor_height + 0.03
-        self.grip_height["bishop"] = self.floor_height + 0.03
+        self.grip_height[PieceType.QUEEN] = self.floor_height + 0.04
+        self.grip_height[PieceType.PAWN] = self.floor_height + 0.025 
+        self.grip_height[PieceType.KING] = self.floor_height + 0.04
+        self.grip_height[PieceType.ROOK] = self.floor_height + 0.025
+        self.grip_height[PieceType.KNIGHT] = self.floor_height + 0.03
+        self.grip_height[PieceType.BISHOP] = self.floor_height + 0.03
         
-        self.release_lying_height["queen"] = self.floor_height + 0.065
-        self.release_lying_height["pawn"] = self.floor_height + 0.03
-        self.release_lying_height["king"] = self.floor_height + 0.06
-        self.release_lying_height["rook"] = self.floor_height + 0.040
-        self.release_lying_height["knight"] = self.floor_height + 0.045
-        self.release_lying_height["bishop"] = self.floor_height + 0.028
+        self.release_lying_height[PieceType.QUEEN] = self.floor_height + 0.065
+        self.release_lying_height[PieceType.PAWN] = self.floor_height + 0.03
+        self.release_lying_height[PieceType.KING] = self.floor_height + 0.06
+        self.release_lying_height[PieceType.ROOK] = self.floor_height + 0.040
+        self.release_lying_height[PieceType.KNIGHT] = self.floor_height + 0.045
+        self.release_lying_height[PieceType.BISHOP] = self.floor_height + 0.028
 
         self.safe_height = 0.15 + self.floor_height
         self.free_platform = self.move_on_chessboard(self.positions['a8'], right=-8.5, up=2)[0:2] + [self.floor_height + 0.042] + self.down_orientation
         self.table_height = self.floor_height - 0.02
 
         #global cube_pose
-        #cube_pose = ChessBot.modify_pose(self.positions["a8"], dx=-0.02, dy=-0.09, dz=0.09)
+        #cube_pose = RobotHardware.modify_pose(self.positions["a8"], dx=-0.02, dy=-0.09, dz=0.09)
 
     def __exit__(self, exc_type, exc_value, traceback):
         try:
@@ -410,7 +411,8 @@ class ChessBot:
         
         return modified
 
-    def mov_chess_piece(self, type=None, start_pos=None, end_pos=None, speed=None, acceleration=None, rz_rotation_start=None, rz_rotation_end=None, move_to_start=True):
+    ### I moved it to the right class, so can delete here ###
+    def mov_chess_piece(self, type: PieceType=None, start_pos=None, end_pos=None, speed=None, acceleration=None, rz_rotation_start=None, rz_rotation_end=None, move_to_start=True):
         if speed is None:
             speed = self.speed
         if acceleration is None:
@@ -470,7 +472,7 @@ class ChessBot:
         self.rtde_c.moveL(path)
         return current_pose
 
-    def mov_chess_piece___experimental(self, type=None, start_pos=None, end_pos=None, blend_radius = 0.05):
+    def mov_chess_piece___experimental(self, type: PieceType=None, start_pos=None, end_pos=None, blend_radius = 0.05):
         if self.pose[Z] < self.safe_height:
             self.move_to(z=self.safe_height)
 
@@ -510,7 +512,7 @@ class ChessBot:
             return [weighted_avg(a, b, x_bias) for a, b in zip(x, y)]
         return x*x_bias + y*(1-x_bias)
 
-    def pick_up_dead_piece(self, type, state, end_pos):
+    def pick_up_dead_piece(self, type: PieceType, state, end_pos):
         ############################################################### add knight support
         # get robot postions from the interactable camera
         base_point, head_point = get_base_and_head_camera_points()
@@ -531,14 +533,14 @@ class ChessBot:
 
         if state == 'standing':
             bias = 0.5
-        elif type == 'bishop':
+        elif type == PieceType.BISHOP:
             bias = 0.5
-        elif type == 'knight':
+        elif type == PieceType.KNIGHT:
             bias = 0.7
         else:
             bias = 0.6
         middle_position = [
-            *ChessBot.weighted_avg(head_robot[:2], base_robot[:2], bias),
+            *RobotHardware.weighted_avg(head_robot[:2], base_robot[:2], bias),
             0,
             *self.get_rotated_tcp_orientation(Rz=dz+180) #Rz=dz+90
         ]
@@ -597,7 +599,7 @@ class ChessBot:
             z=self.safe_height,
             orientation =
                 self.get_rotated_tcp_orientation(Rz=90)
-                if state == 'lying' and type == 'knight' and self.get_gripper() < grip_size['knight']-7
+                if state == 'lying' and type == PieceType.KNIGHT and self.get_gripper() < grip_size[PieceType.KNIGHT]-7
                 else None
         )
         self.move_to(z=self.grip_height[type] + GRIP_RELEASE_HEIGHT)
@@ -606,8 +608,9 @@ class ChessBot:
         self.move_to(z=self.safe_height)
         self.rtde_c.moveJ(BASE_EYAL, 1, 0.5)
         self.move_to(self.start_position, z=self.safe_height)
-        
-    def capture_piece(self, type, start_pos, end_pos = None, rz_start=None, move_to_start=True):
+
+    ### I moved it to the right class, so can delete here ###        
+    def capture_piece(self, type: PieceType, start_pos, end_pos = None, rz_start=None, move_to_start=True):
         if end_pos is None:
             end_pos = list(map(float, get_head_camera_point())) + self.down_orientation
         start_pos = self.normalize_pos(start_pos)
@@ -625,6 +628,7 @@ class ChessBot:
         if move_to_start:
             self.move_to(self.start_position, z=self.safe_height)
 
+    ### I moved it to the right class, so can delete here ###
     def move_and_capture_piece(self, capturer, captured, empty_pos=None):
         (capturer_type, capturer_pos) = capturer
         (captured_type, captured_pos) = captured
@@ -828,16 +832,16 @@ def get_head_camera_point():
 
 
 def main():
-    with ChessBot(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_, speed=0.5) as robot:
+    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_, speed=0.5) as robot:
        # מלך, מלכה, רץ, פרש, צריח, רגלי = king, queen, bishop, knight, rook, pawn
         print("starting session")
         #robot.rtde_c.moveJ(BASE_URI, 1, 0.5)
         #robot.move_to(robot.start_position, z=robot.sky_height)
         #robot.move_to(robot.positions['h8'])
-        #robot.pick_up_dead_piece("queen", "lying", "a1")
-        #robot.mov_chess_piece("pawn", "h6", "a8")
-        robot.move_and_capture_piece(("pawn", "b2"), ("queen","c3"))
-        #robot.pick_up_dead_piece("queen", "lying", "c1")
+        #robot.pick_up_dead_piece(PieceType.QUEEN, "lying", "a1")
+        #robot.mov_chess_piece(PieceType.PAWN, "h6", "a8")
+        robot.move_and_capture_piece((PieceType.PAWN, "b2"), (PieceType.QUEEN,"c3"))
+        #robot.pick_up_dead_piece(PieceType.QUEEN, "lying", "c1")
         #robot.move_to(orientation = robot.down_orientation)
         #robot.move_to(orientation = robot.get_rotated_tcp_orientation(Rx = -85))
         #tmp_pose = robot.normalize_pos(get_head_camera_point())
@@ -855,7 +859,7 @@ def main():
         
         #while True:
             #print(get_head_camera_point())
-        #robot.mov_chess_piece("rook", "h1", "h8")
+        #robot.mov_chess_piece(PieceType.ROOk, "h1", "h8")
         robot.move_to(robot.start_position, z=robot.sky_height)
         print("end of session")
 
@@ -902,5 +906,5 @@ if __name__ == "__main__":
         #         print(f"point {i + 1}:", list(map(float, head)), file=f)
         #         f.flush()
 
-    #robot.pick_up_dead_piece("queen", "lying", "a1")
-    #robot.move_and_capture_piece(("pawn", "b2"), ("queen","c3"))
+    #robot.pick_up_dead_piece(PieceType.QUEEN, "lying", "a1")
+    #robot.move_and_capture_piece((PieceType.PAWN", "b2"), (PieceType.QUEEN,"c3"))
