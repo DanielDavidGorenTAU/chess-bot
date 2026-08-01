@@ -1,0 +1,80 @@
+from main.config import AppConfig
+from game.game import Game
+from game.player import Player, HumanPlayer, RobotPlayer
+from yolo.human_interpreter import HumanMoveInterpreter
+from yolo.yolo_model import YoloModel
+from yolo.fen_translator import BinaryToFenTranslator  # or factory for translators
+from arm.playing_robot import *
+from ZED.cameralib import Camera
+from arm.chessbot import RobotHardware
+
+
+class GameFactory:
+    """Dependency Injector responsible for constructing all sub-systems."""
+
+    def __init__(self, config: AppConfig, camera: Camera, robot: RobotHardware):
+        self.config = config
+        self.camera = camera  
+        self.robot = robot 
+
+    def create_robot_hardware(self) -> PlayingRobot:
+        """Builds real or mock robot hardware driver."""
+        if self.config.robot.is_mock:
+            print("[Factory] Injecting MockPlayingRobot")
+            return PlayingMock()
+        else:
+            print(f"[Factory] Injecting Real PlayingRobot")
+            return PlayingArm(self.robot)
+
+    def create_engine(self):
+        """Builds real or mock chess engine."""
+        if self.config.engine.is_mock:
+            print("[Factory] Injecting MockEngine")
+            # return MockEngine()
+            return None  # Stub
+        else:
+            print(f"[Factory] Injecting Stockfish Engine ({self.config.engine.path})")
+            # return StockfishEngine(path=self.config.engine.path, depth=self.config.engine.depth)
+            return None  # Stub
+
+    def _build_human_interpreter(self) -> HumanMoveInterpreter:
+        """Assembles Vision + Translator pipeline."""
+        print(f"[Factory] Assembling Vision Pipeline with model '{self.config.vision.model_name}'")
+        # camera = Camera(device_id=self.config.vision.camera_index)
+        camera = None  # Stub
+        
+        yolo_model = YoloModel(model_name=self.config.vision.model_name, camera=camera)
+        translator = BinaryToFenTranslator()
+        
+        return HumanMoveInterpreter(yolo_model=yolo_model, translator=translator)
+
+    def _build_player(self, player_type: str, name: str) -> Player:
+        """Constructs a Human or Robot player based on config type."""
+        if player_type.lower() == "human":
+            interpreter = self._build_human_interpreter()
+            return HumanPlayer(name=name, interpreter=interpreter)
+            
+        elif player_type.lower() in ("robot", "ai"):
+            playing_robot = self.create_robot_hardware()
+            engine = self.create_engine()
+            return RobotPlayer(name=name, engine=engine, robot=playing_robot)
+            
+        else:
+            raise ValueError(f"Unknown player type: '{player_type}' in configuration.")
+
+    def create_game(self) -> Game:
+        """Factory entrypoint to build the full Game orchestrator."""
+        white_player = self._build_player(
+            player_type=self.config.game.white_player, 
+            name=self.config.game.white_name
+        )
+        black_player = self._build_player(
+            player_type=self.config.game.black_player, 
+            name=self.config.game.black_name
+        )
+
+        return Game(
+            white_player=white_player,
+            black_player=black_player,
+            initial_fen=self.config.game.initial_fen
+        )
