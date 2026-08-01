@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from reactions import ReactionWaiter, ConsoleEnterReaction
-from yolo.yolo_model import YoloModel
+from yolo.human_interpreter import HumanMoveInterpreter
 from actions import ChessAction
 from action_interpreter import ActionFactory
 from arm.playing_robot import PlayingRobot 
@@ -30,17 +30,17 @@ class Player(ABC):
 
 
 class HumanPlayer(Player):
-    def __init__(self, name: str = "Human", reaction_waiter: ReactionWaiter = None, model: YoloModel = None):
+    def __init__(self, name: str = "Human", reaction_waiter: ReactionWaiter = None, interpeter: HumanMoveInterpreter = None):
         super().__init__(name)
         # Default to pressing Enter if no reaction waiter is specified
         self.reaction_waiter : ReactionWaiter = reaction_waiter or ConsoleEnterReaction()
-        self.model: YoloModel = model
+        self.interpeter: HumanMoveInterpreter = interpeter
 
     def prepare_move(self, fen: str):
         self.reaction_waiter.wait() #waits for human reaction
 
     def execute_move(self, fen: str) -> str:
-        return self.model.update_fen(fen)
+        return self.interpeter.update_fen(fen)
   
         
 

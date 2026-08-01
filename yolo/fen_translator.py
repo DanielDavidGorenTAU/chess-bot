@@ -11,13 +11,6 @@ CORNERS_FILE = "/home/checkmate/Documents/chess-bot/corners.json"
 
 class Translator(ABC):
 
-    def _get_color(self, label):
-        if label<0:
-            return -1
-        elif label <= 5:
-            return 0  # black
-        else:
-            return 1  # white
 
     def _debug_boards(self, matrices):
         for mat in matrices:
@@ -25,33 +18,6 @@ class Translator(ABC):
                 print(row)
             print("\n")
 
-    def _parse_fen_to_int_grid(self,fen_string):
-        """
-        Converts FEN string into an 8x8 grid of integers (0-11, empty=-1)
-        and extracts active turn (1 for white, 0 for black).
-        
-        Returns:
-            tuple: (int_grid, active_turn)
-        """
-        parts = fen_string.split()
-        board_part = parts[0]
-        
-        # 1 for white ('w'), 0 for black ('b')
-        active_turn = 1 if (len(parts) > 1 and parts[1].lower() == 'w') else 0
-
-        rows = board_part.split('/')
-        int_grid = []
-
-        for row_str in rows:
-            grid_row = []
-            for char in row_str:
-                if char.isdigit():
-                    grid_row.extend([-1] * int(char))
-                else:
-                    grid_row.append(FEN_TO_INT[char])
-            int_grid.append(grid_row)
-
-        return int_grid, active_turn
 
     def _get_warp_matrix(self, corners, target_size=800):
         src_pts = np.array(corners, dtype="float32")
@@ -75,29 +41,6 @@ class Translator(ABC):
         
         return max(0, min(7, row)), max(0, min(7, col))
 
-    def _grid_to_fen(self, board_grid, active_turn=1):
-        """
-        Converts an 8x8 integer grid (0-11, -1) into a FEN string.
-        """
-        fen_rows = []
-        for row in range(8):
-            empty_count = 0
-            row_str = ""
-            for col in range(8):
-                val = board_grid[row][col]
-                if val == -1 or val is None:
-                    empty_count += 1
-                else:
-                    if empty_count > 0:
-                        row_str += str(empty_count)
-                        empty_count = 0
-                    row_str += INT_TO_FEN[val]
-            if empty_count > 0:
-                row_str += str(empty_count)
-            fen_rows.append(row_str)
-        char_active_turn = "b" if active_turn == 0 else "w"
-        board_fen = "/".join(fen_rows)
-        return f"{board_fen} {char_active_turn} - - 0 1"
 
     @abstractmethod
     def translate_to_fen(self, old_fen: str, detections_file: str) -> str:
@@ -148,7 +91,7 @@ class BinaryToFenTranslator(Translator):
         """
         Generates a new FEN string based on the old FEN and detected colors.
         """
-        old_board_grid, active_turn = self._parse_fen_to_int_grid(old_fen)
+        old_board_grid, active_turn = parse_fen_to_int_grid(old_fen)
         detected_color_grid = self._create_detected_grid(detections_file, CORNERS_FILE)
         self._debug_boards([old_board_grid, detected_color_grid])
 
@@ -159,7 +102,7 @@ class BinaryToFenTranslator(Translator):
         for row in range(8):
             for col in range(8):
                 old_piece = old_board_grid[row][col]
-                old_piece_type = self._get_color(old_piece)
+                old_piece_type = get_color(old_piece)
                 new_piece_type = detected_color_grid[row][col]
 
                 if old_piece_type == new_piece_type:
@@ -229,4 +172,5 @@ class BinaryToFenTranslator(Translator):
             
         else:
             print("Error: Unexpected move scenario.")
-        return self._grid_to_fen(old_board_grid, 1-active_turn)
+
+        return grid_to_fen(old_board_grid, 1-active_turn)

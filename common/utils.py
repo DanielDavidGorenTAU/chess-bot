@@ -99,3 +99,11 @@ def grid_to_fen(board_grid, active_turn=1):
     char_active_turn = "b" if active_turn == 0 else "w"
     board_fen = "/".join(fen_rows)
     return f"{board_fen} {char_active_turn} - - 0 1"
+
+def get_color(label):
+    if label<0:
+        return -1
+    elif label <= 5:
+        return 0  # black
+    else:
+        return 1  # white
