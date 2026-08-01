@@ -6,30 +6,16 @@ from datetime import datetime
 # Folder where images will be saved (inside project)
 SAVE_DIR = "zed_setting_images_2"
 
-BRIGHTNESS = None  # Usually 0-8
 
 class Camera:
-    def __init__(self):
+    def __init__(self, brightness: int = None):
         self.zed = sl.Camera()
         self.init_params = sl.InitParameters()
         self.init_params.camera_resolution = sl.RESOLUTION.HD2K
         self.init_params.depth_mode = sl.DEPTH_MODE.ULTRA
         self.init_params.coordinate_units = sl.UNIT.METER
         self.init_params.camera_fps = 15
-
-        status = self.zed.open(self.init_params)
-        if status != sl.ERROR_CODE.SUCCESS:
-            raise Exception(f"Failed to open camera: {status}")
-        
-        if BRIGHTNESS is not None:
-            self.zed.set_camera_settings(
-                sl.VIDEO_SETTINGS.BRIGHTNESS,
-                BRIGHTNESS
-            )
-
-        # Let auto exposure stabilize
-        for _ in range(30):
-            self.zed.grab()
+        self.brightness = brightness #0-8
 
     def _take_photo(self, image_mat):
         """
@@ -99,6 +85,17 @@ class Camera:
                 break
     
     def __enter__(self):
+        status = self.zed.open(self.init_params)
+        if status != sl.ERROR_CODE.SUCCESS:
+            raise Exception(f"Failed to open camera: {status}")
+        
+        if self.brightness is not None:
+            self.zed.set_camera_settings(sl.VIDEO_SETTINGS.BRIGHTNESS, self.brightness)
+
+        # Let auto exposure stabilize
+        for _ in range(30):
+            self.zed.grab()
+
         return self
     
     def __exit__(self, *_):
