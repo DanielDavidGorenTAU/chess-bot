@@ -7,7 +7,7 @@ from typing import Any, Dict
 @dataclass
 class RobotConfig:
     is_mock: bool = False
-    ip: str = "127.0.0.1"
+    ip: str = "192.168.57.101"
     base_tcp_port: int = 63352
     speed: float = 0.1
     acceleration: float = 0.1
