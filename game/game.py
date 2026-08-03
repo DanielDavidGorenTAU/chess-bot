@@ -4,8 +4,7 @@ DEFAULT_STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 
 class Game:
     def __init__(self, white_player: Player, black_player: Player, fen: str = DEFAULT_STARTING_FEN):
-        self.white_player: Player = white_player
-        self.black_player: Player = black_player
+        self.players = [black_player, white_player]
         self.fen: str = fen
         self.turn: int = self._extract_turn_from_fen(fen) # 1 for white, 0 for black
         self.is_running: bool = False
@@ -26,6 +25,11 @@ class Game:
         current_turn_name = "White" if self.turn == 1 else "Black"
         print(f"Game started! Initial FEN: {self.fen}")
         print(f"Active turn: {current_turn_name} ({self.turn})")
+        while self.is_running:
+            cur_player = self.players[self.turn]
+            self.fen = cur_player.execute_move(self.fen)
+            self.turn = 1 - self.turn
+
 
     def stop_game(self):
         """Stops the game loop or marks the game as inactive."""
