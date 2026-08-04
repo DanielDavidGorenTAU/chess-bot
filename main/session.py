@@ -24,6 +24,7 @@ class ChessSession:
     def run(self):
         try:
             print("\n=== MOUNTING HARDWARE ===")
+            # Entering the context
             for res in self.hardware_resources:
                 if hasattr(res, "__enter__"):
                     self._exit_stack.enter_context(res)
