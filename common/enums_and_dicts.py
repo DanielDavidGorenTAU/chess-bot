@@ -41,6 +41,9 @@ INT_TO_FEN = {
     11: 'R'  # white-rook
 }
 
+INT_TO_NAME = ["black-bishop", "black-king", "black-knight", "black-pawn", "black-queen", "black-rook", 
+               "white-bishop", "white-king", "white-knight", "white-pawn", "white-queen", "white-rook"]
+
 PROMOTED_PIECES = {
     'b' : PieceType.BISHOP,
     'n' : PieceType.KNIGHT,
