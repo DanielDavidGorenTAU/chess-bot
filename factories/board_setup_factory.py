@@ -1,16 +1,10 @@
 from main.config import AppConfig
 from ZED.cameralib import Camera
 from arm.chessbot import RobotHardware
+from board_setup.board_setup import BoardSetupService
 
 
-class BoardSetupService:
-    """Handles pre-game board arrangement and piece alignment."""
-    def __init__(self, camera: Camera, robot: RobotHardware):
-        self.camera = camera
-        self.robot = robot
 
-    def setup_board(self):
-        print("[BoardSetupService] Running board setup & piece alignment...")
 
 
 class BoardSetupFactory:
