@@ -35,14 +35,36 @@ class Camera:
         """
         Private method, Saves photo at the specified dir
         """
+        piece_type = "00"
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
-        image_path = os.path.join(output_dir, f"zed_{timestamp}.png")
+        image_path = os.path.join(output_dir, f"{piece_type}_{timestamp}.png")
 
         if not cv2.imwrite(image_path, frame):
             raise RuntimeError(f"Failed to save image to {image_path}")
         print(f"Saved {image_path}")
 
         return os.path.abspath(image_path)
+
+    def _crop_frame(
+    self,
+    frame,
+    x: int,
+    y: int,
+    width: int,
+    height: int,
+    ):
+        """
+        Private method. Returns a cropped copy of the frame.
+        """
+
+        img_h, img_w = frame.shape[:2]
+
+        x = max(0, min(x, img_w - 1))
+        y = max(0, min(y, img_h - 1))
+        width = min(width, img_w - x)
+        height = min(height, img_h - y)
+
+        return frame[y:y + height, x:x + width].copy()
 
     def take_photo(self, output_dir: str) -> str:
         """
@@ -83,6 +105,51 @@ class Camera:
             # q quits
             elif key == ord('q'):
                 break
+
+    def capture_and_crop(
+        self,
+        output_path: str,
+        x: int,
+        y: int,
+        width: int,
+        height: int,
+    ) -> bool:
+        """
+        Shows a live preview.
+        Press ENTER to save the cropped image.
+        Press q to quit without saving.
+        """
+        cropped_path = output_path + "_cropped"
+        os.makedirs(output_path, exist_ok=True)
+        os.makedirs(cropped_path, exist_ok=True)
+
+        image_mat = sl.Mat()
+
+        print("Press ENTER to save the cropped image.")
+        print("Press 'q' to quit.")
+
+        while True:
+            frame = self._take_photo(image_mat)
+
+            cv2.imshow("ZED Camera", frame)
+
+            key = cv2.waitKey(1) & 0xFF
+
+            if key == 13:
+                img_h, img_w = frame.shape[:2]
+
+                x0 = max(0, min(x, img_w - 1))
+                y0 = max(0, min(y, img_h - 1))
+                w = min(width, img_w - x0)
+                h = min(height, img_h - y0)
+
+                cropped = frame[y0:y0 + h, x0:x0 + w]
+
+                #self._save_photo(output_path, frame)
+                self._save_photo(cropped_path, cropped)
+
+            elif key == ord("q"):
+                return False
     
     def __enter__(self):
         status = self.zed.open(self.init_params)
