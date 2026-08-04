@@ -7,6 +7,7 @@ from yolo.fen_translator import BinaryToFenTranslator  # or factory for translat
 from arm.playing_robot import *
 from ZED.cameralib import Camera
 from arm.chessbot import RobotHardware
+from ChessLogic.engine import ChessEngine
 
 
 class GameFactory:
@@ -27,23 +28,13 @@ class GameFactory:
             return PlayingArm(self.robot)
 
     def create_engine(self):
-        """Builds real or mock chess engine."""
-        if self.config.engine.is_mock:
-            print("[Factory] Injecting MockEngine")
-            # return MockEngine()
-            return None  # Stub
-        else:
-            print(f"[Factory] Injecting Stockfish Engine ({self.config.engine.path})")
-            # return StockfishEngine(path=self.config.engine.path, depth=self.config.engine.depth)
-            return None  # Stub
+        return ChessEngine()
 
     def _build_human_interpreter(self) -> HumanMoveInterpreter:
         """Assembles Vision + Translator pipeline."""
         print(f"[Factory] Assembling Vision Pipeline with model '{self.config.vision.model_name}'")
-        # camera = Camera(device_id=self.config.vision.camera_index)
-        camera = None  # Stub
         
-        yolo_model = YoloModel(model_name=self.config.vision.model_name, camera=camera)
+        yolo_model = YoloModel(model_name=self.config.vision.model_name, camera=self.camera)
         translator = BinaryToFenTranslator()
         
         return HumanMoveInterpreter(yolo_model=yolo_model, translator=translator)

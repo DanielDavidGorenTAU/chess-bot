@@ -1,10 +1,12 @@
 import chess
 import chess.engine
 import argparse
+from common.exceptions import EngineNoMove
+
+ENGINE_PATH ="./stockfish/stockfish-ubuntu-x86-64-avx2"
 
 class ChessEngine:
-    @staticmethod
-    def choose_move(fen: str, engine_path="./stockfish/stockfish-ubuntu-x86-64-avx2") -> str:
+    def choose_move(self, fen: str, engine_path=ENGINE_PATH) -> str:
         """
         Uses real chess engine to decide on move based on current board FEN string
         Returns move in UCI format e.g "e2e4", "e7e8q"
@@ -20,6 +22,8 @@ class ChessEngine:
             result = engine.play(board, chess.engine.Limit(time=0.1))
             if result.move:
                 return result.move.uci()
+            else: 
+                raise EngineNoMove()
             
         return ""
 
@@ -63,12 +67,14 @@ if __name__ == "__main__":
         print("--- Running Chess Engine Test Suite ---\n")
         
         passed = 0
+        engine = ChessEngine()
+
         for i, test in enumerate(test_cases, 1):
             print(f"Test {i}: {test['name']}")
             print(f"FEN: {test['fen']}")
             
             try:
-                move = ChessEngine.choose_move(test['fen'])
+                move = engine.choose_move(test['fen'])
                 print(f"Engine played: {move}")
                 
                 if test['expected']:
