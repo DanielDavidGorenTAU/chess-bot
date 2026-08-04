@@ -1,7 +1,95 @@
-class ChessEngine():
-    def choose_move(fen: str) -> str:
+import chess
+import chess.engine
+import argparse
+
+class ChessEngine:
+    @staticmethod
+    def choose_move(fen: str, engine_path="./stockfish/stockfish-ubuntu-x86-64-avx2") -> str:
         """
         Uses real chess engine to decide on move based on current board FEN string
         Returns move in UCI format e.g "e2e4", "e7e8q"
         """
+        # Handle cases where only the board layout is provided
+        try:
+            board = chess.Board(fen.strip())
+        except ValueError:
+            board = chess.Board(fen.strip() + " w - - 0 1")
+
+        # Open the engine, find the move, and safely close the engine
+        with chess.engine.SimpleEngine.popen_uci(engine_path) as engine:
+            result = engine.play(board, chess.engine.Limit(time=0.1))
+            if result.move:
+                return result.move.uci()
+            
         return ""
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Get the optimal chess move from a FEN string")
+    parser.add_argument("--test", action="store_true", help="Run the test suite")
+    parser.add_argument("--fen", type=str, help="Pass a FEN string to get the optimal move")
+    
+    args = parser.parse_args()
+
+    # If a FEN is passed directly via terminal
+    if args.fen:
+        best_move = ChessEngine.choose_move(args.fen)
+        print(best_move)
+        
+    # If the --test flag is passed
+    elif args.test:
+        test_cases = [
+            {
+                "name": "Standard Starting Position",
+                "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+                "expected": None # No strict expectation, just needs a valid move
+            },
+            {
+                "name": "Mate in 1 (White to move)",
+                "fen": "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 4 4",
+                "expected": "f3f7" # Scholar's mate
+            },
+            {
+                "name": "Mate in 1 (Black to move)",
+                "fen": "4r1k1/5ppp/8/8/8/8/5PPP/6K1 b - - 0 1",
+                "expected": "e8e1" # Back rank mate
+            },
+            {
+                "name": "Board-only FEN (Tests the ValueError fallback)",
+                "fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR",
+                "expected": None # No strict expectation, but should not crash
+            }
+        ]
+
+        print("--- Running Chess Engine Test Suite ---\n")
+        
+        passed = 0
+        for i, test in enumerate(test_cases, 1):
+            print(f"Test {i}: {test['name']}")
+            print(f"FEN: {test['fen']}")
+            
+            try:
+                move = ChessEngine.choose_move(test['fen'])
+                print(f"Engine played: {move}")
+                
+                if test['expected']:
+                    if move == test['expected']:
+                        print("Result: PASS (Found expected move)")
+                        passed += 1
+                    else:
+                        print(f"Result: FAIL (Expected {test['expected']})")
+                else:
+                    if move:
+                        print("Result: PASS (Generated a valid move)")
+                        passed += 1
+                    else:
+                        print("Result: FAIL (No move generated)")
+            except Exception as e:
+                print(f"Result: FAIL (Exception occurred: {e})")
+                
+            print("-" * 40)
+            
+        print(f"Tests Completed: {passed}/{len(test_cases)} Passed")
+
+    else:
+        # If no arguments are passed, show the help menu
+        parser.print_help()
