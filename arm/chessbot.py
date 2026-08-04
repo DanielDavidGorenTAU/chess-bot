@@ -12,6 +12,7 @@ import pyzed.sl as sl
 import math
 from common.enums_and_dicts import PieceType
 
+
 URI_IP = "192.168.56.101"
 AYAL_IP = "192.168.57.101"
 
@@ -47,18 +48,18 @@ camera_points = np.array([
 ])
 
 robot_points = np.array([
-[-0.7249947977068212, -0.5267856333788881, -0.262378442307538], #0
-[-0.6880618147897322, -0.5268587206226445, -0.26323269512522585], #1
-[-0.6144277824990243, -0.5325676978885787, -0.2628489558319545], #2
-[-0.57676539117318, -0.5336532600330266, -0.2626081849690853], #3
-[-0.6118527294858108, -0.4915335521198404, -0.26325969622180423], #4
-[-0.6473464142855513, -0.45910513580369394, -0.26232567896498143], #5
-[-0.6481519846466364, -0.4256951367784092, -0.26274898797695984], #6
-[-0.57728156343802, -0.38379528541886104, -0.26360652643074456], #7
-[-0.6743646975517856, -0.35349122068883093, -0.26415130514677343], #8
-[-0.6105459715410131, -0.35471354910395103, -0.2625496176206895], #9
-[-0.6720680685624673, -0.32013044067751106, -0.262824321430711], #10
-[-0.6136742072837144, -0.31433334607658586, -0.2633830155207719], #11
+    [-0.7249947977068212, -0.5267856333788881, -0.262378442307538], #0
+    [-0.6880618147897322, -0.5268587206226445, -0.26323269512522585], #1
+    [-0.6144277824990243, -0.5325676978885787, -0.2628489558319545], #2
+    [-0.57676539117318, -0.5336532600330266, -0.2626081849690853], #3
+    [-0.6118527294858108, -0.4915335521198404, -0.26325969622180423], #4
+    [-0.6473464142855513, -0.45910513580369394, -0.26232567896498143], #5
+    [-0.6481519846466364, -0.4256951367784092, -0.26274898797695984], #6
+    [-0.57728156343802, -0.38379528541886104, -0.26360652643074456], #7
+    [-0.6743646975517856, -0.35349122068883093, -0.26415130514677343], #8
+    [-0.6105459715410131, -0.35471354910395103, -0.2625496176206895], #9
+    [-0.6720680685624673, -0.32013044067751106, -0.262824321430711], #10
+    [-0.6136742072837144, -0.31433334607658586, -0.2633830155207719], #11
 ])
 
 grip_size = {
@@ -78,8 +79,6 @@ OPENED = 0
 HALF_OPENED = 140
 OFFSET_TO_TABLE_HEIGHT = -0.02
 CELL_LENGTH = 4.75 #cm
-
-
 
 clicked_point = None
 point_cloud = sl.Mat()
@@ -112,30 +111,37 @@ def reset_gripper(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT):
             except Exception:
                 pass
     sys.exit(0)
+
 def move_to_start_postion():
     with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
         robot.move_to(robot.start_position, z=robot.safe_height)
     sys.exit(0)
+
 def grip_close():
     with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
         robot.set_gripper(CLOSED)
     sys.exit(0)
+
 def grip_open():
     with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
         robot.set_gripper(OPENED)
     sys.exit(0)
+
 def print_position():
     with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
         print(robot.pose[:])
     sys.exit(0)
+
 def align_position():
     with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
         robot.rtde_c.moveJ(BASE_EYAL, 1, 0.5)
     sys.exit(0)
+
 def get_grip():
     with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
         print(robot.get_gripper())
     sys.exit(0)
+
 def print_joints():
     with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
         print(list(robot.rtde_r.getActualQ()))
@@ -162,8 +168,7 @@ class RobotHardware:
         self.start_position = [0, 0, 0, 0, 0, 0]
         self.positions = {}
         self.grip_height = {}
-        self.release_lying_height = {}
-        self.down_orientation = [2.0107452890463056, -2.3743186369030598, -0.0762631964824858]
+        self.down_orientation = [0,0,0] 
         self.free_platform = [0,0,0,0,0,0]
         self.table_height = 0
 
@@ -171,10 +176,13 @@ class RobotHardware:
         self.rtde_c = RTDEControlInterface(self.robot_ip)
         self.rtde_r = RTDEReceiveInterface(self.robot_ip)
         self.gripper = RobotiqGripper()
+
         self.gripper.connect(self.robot_ip, self.base_tcp_port)
+
         time.sleep(0.1)
+
         self.calibrate_board_positions(self.A1, self.H8)
-        #self.rtde_c.moveL(self.start_position, self.speed, self.acceleration)
+
         if not self.gripper.is_active():
             self.gripper.activate()
         return self
@@ -189,10 +197,8 @@ class RobotHardware:
 
     def calibrate_board_positions(self, a1=None, h8=None):
        
-        if a1 is None:
-            a1 = A1
-        if h8 is None:
-            h8 = H8
+        if a1 is None or h8 is None:
+            raise Exception("error with a1 and h8 set values")
 
         dx = h8[X] - a1[X]
         dy = h8[Y] - a1[Y]
@@ -224,16 +230,8 @@ class RobotHardware:
         self.grip_height[PieceType.ROOK] = self.floor_height + 0.025
         self.grip_height[PieceType.KNIGHT] = self.floor_height + 0.03
         self.grip_height[PieceType.BISHOP] = self.floor_height + 0.03
-        
-        self.release_lying_height[PieceType.QUEEN] = self.floor_height + 0.065
-        self.release_lying_height[PieceType.PAWN] = self.floor_height + 0.03
-        self.release_lying_height[PieceType.KING] = self.floor_height + 0.06
-        self.release_lying_height[PieceType.ROOK] = self.floor_height + 0.040
-        self.release_lying_height[PieceType.KNIGHT] = self.floor_height + 0.045
-        self.release_lying_height[PieceType.BISHOP] = self.floor_height + 0.028
 
         self.safe_height = 0.15 + self.floor_height
-        self.free_platform = self.move_on_chessboard(self.positions['a8'], right=-8.5, up=2)[0:2] + [self.floor_height + 0.042] + self.down_orientation
         self.table_height = self.floor_height - 0.02
 
         #global cube_pose
@@ -509,7 +507,7 @@ class RobotHardware:
     @staticmethod
     def weighted_avg(x, y, x_bias):
         if isinstance(x, list):
-            return [weighted_avg(a, b, x_bias) for a, b in zip(x, y)]
+            return [RobotHardware.weighted_avg(a, b, x_bias) for a, b in zip(x, y)]
         return x*x_bias + y*(1-x_bias)
 
     def pick_up_dead_piece(self, type: PieceType, state, end_pos):
@@ -542,7 +540,7 @@ class RobotHardware:
         middle_position = [
             *RobotHardware.weighted_avg(head_robot[:2], base_robot[:2], bias),
             0,
-            *self.get_rotated_tcp_orientation(Rz=dz+180) #Rz=dz+90
+            *self.get_rotated_tcp_orientation(Rz=dz+180)
         ]
         
         # fix height
@@ -567,7 +565,6 @@ class RobotHardware:
             self.move_to(z=cube_pose[Z] - self.floor_height + self.grip_height[type] + 0.01)
             
             # release standing piece
-            #self.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET) 
             self.set_gripper(self.get_gripper() - GRIP_RELEASE_OFFSET)
 
             # straighten the arm back   /    dx = 0.01
@@ -603,10 +600,10 @@ class RobotHardware:
                 else None
         )
         self.move_to(z=self.grip_height[type] + GRIP_RELEASE_HEIGHT)
-        #self.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET)
+       
         self.set_gripper(open_by=GRIP_RELEASE_OFFSET)
         self.move_to(z=self.safe_height)
-        self.rtde_c.moveJ(BASE_EYAL, 1, 0.5)
+        #self.rtde_c.moveJ(BASE_EYAL, 1, 0.5)
         self.move_to(self.start_position, z=self.safe_height)
 
     ### I moved it to the right class, so can delete here ###        
@@ -620,7 +617,7 @@ class RobotHardware:
         self.move_to(z=self.grip_height[type])
         self.set_gripper(CLOSED)
         self.move_to(z=self.safe_height)
-        #print(f"{end_pos = }")
+        
         self.move_to(end_pos, z=self.safe_height)
         self.move_to(z=self.grip_height[type]+OFFSET_TO_TABLE_HEIGHT)
         self.set_gripper(open_by=GRIP_RELEASE_OFFSET)
@@ -738,16 +735,10 @@ def get_base_and_head_camera_points():
         if key == 27:  # ESC
             break
 
-    
-
-
-
     zed.close()
-
     cv2.destroyAllWindows()
 
     return base_point, head_point
-
 
 def get_head_camera_point():
     global clicked_point, point_cloud
@@ -761,22 +752,13 @@ def get_head_camera_point():
     init_params.coordinate_units = sl.UNIT.METER
     init_params.camera_resolution = sl.RESOLUTION.HD2K
 
-   
-    
-
-   
-
     if zed.open(init_params) != sl.ERROR_CODE.SUCCESS:
         print("Failed to open ZED")
         return
 
-
-    
-
-    
-
     image = sl.Mat()
     runtime_params = sl.RuntimeParameters()
+
     cv2.namedWindow("ZED")
     cv2.setMouseCallback("ZED", mouse_callback)
 
@@ -796,14 +778,7 @@ def get_head_camera_point():
                 if err == sl.ERROR_CODE.SUCCESS:
                     X_, Y_, Z_ = point3d[:3]
                     if np.isfinite(X_) and np.isfinite(Y_) and np.isfinite(Z_):
-                        print(f"Pixel ({x}, {y})")
-                        print(f"3D point: X={X_:.3f}, Y={Y_:.3f}, Z={Z_:.3f} meters")
-                        if(False):
-                            base_point = [X_, Y_, Z_]
-                            print(f"base_point is set")
-                        else:
-                            head_point = [X_, Y_, Z_]
-                            print(f"head_point is set")
+                       head_point = [X_, Y_, Z_] 
                     else:
                         print("Invalid depth at this pixel")
 
@@ -815,16 +790,14 @@ def get_head_camera_point():
             break
 
     zed.close()
-
     cv2.destroyAllWindows()
 
-    
     R, t = estimate_transform(camera_points, robot_points)
     head_robot = R @ head_point + t
 
     # fix alignment
-    head_robot[Y]-=0.01
-    head_robot[X]+=0.01
+    #head_robot[Y]-=0.01
+    #head_robot[X]+=0.01
 
     return head_robot
 
@@ -844,7 +817,7 @@ def main():
         #robot.pick_up_dead_piece(PieceType.QUEEN, "lying", "c1")
         #robot.move_to(orientation = robot.down_orientation)
         #robot.move_to(orientation = robot.get_rotated_tcp_orientation(Rx = -85))
-        #tmp_pose = robot.normalize_pos(get_head_camera_point())
+       
         #tmp_pose[Z]+=0.01
         #robot.move_to(tmp_pose)
         
@@ -857,9 +830,7 @@ def main():
         #         print(f"point {i + 1}:", list(map(float, head)), file=f)
         
         
-        #while True:
-            #print(get_head_camera_point())
-        #robot.mov_chess_piece(PieceType.ROOk, "h1", "h8")
+        
         robot.move_to(robot.start_position, z=robot.sky_height)
         print("end of session")
 
