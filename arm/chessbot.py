@@ -77,7 +77,7 @@ GRIP_RELEASE_HEIGHT = 0.005
 CLOSED = 255
 OPENED = 0
 HALF_OPENED = 140
-OFFSET_TO_TABLE_HEIGHT = -0.02
+OFFSET_TO_TABLE_HEIGHT = -0.00 # -0.02
 CELL_LENGTH = 4.75 #cm
 
 clicked_point = None
@@ -169,8 +169,8 @@ class RobotHardware:
         self.positions = {}
         self.grip_height = {}
         self.down_orientation = [0,0,0] 
-        self.free_platform = [0,0,0,0,0,0]
         self.table_height = 0
+        self.storage = {}
 
     def __enter__(self):
         self.rtde_c = RTDEControlInterface(self.robot_ip)
@@ -232,7 +232,7 @@ class RobotHardware:
         self.grip_height[PieceType.BISHOP] = self.floor_height + 0.03
 
         self.safe_height = 0.15 + self.floor_height
-        self.table_height = self.floor_height - 0.02
+        self.table_height = self.floor_height + OFFSET_TO_TABLE_HEIGHT
 
         #global cube_pose
         #cube_pose = RobotHardware.modify_pose(self.positions["a8"], dx=-0.02, dy=-0.09, dz=0.09)
@@ -510,7 +510,7 @@ class RobotHardware:
             return [RobotHardware.weighted_avg(a, b, x_bias) for a, b in zip(x, y)]
         return x*x_bias + y*(1-x_bias)
 
-    def pick_up_dead_piece(self, type: PieceType, state, end_pos):
+    def pick_up_dead_piece(self, type: PieceType = PieceType.QUEEN, state=None, end_pos=None):
         ############################################################### add knight support
         # get robot postions from the interactable camera
         base_point, head_point = get_base_and_head_camera_points()
@@ -528,6 +528,13 @@ class RobotHardware:
         dx = head_robot[0] - base_robot[0]
         dy = head_robot[1] - base_robot[1]
         dz = math.degrees(math.atan2(dx, dy))
+
+        # check if standing or lying
+        if state == None:
+            if np.abs(head_robot[Z] - base_robot[Z]) > np.sqrt(np.abs(dx)**2 + np.abs(dy)**2):
+                state = 'standing'
+            else:
+                state = 'lying'
 
         if state == 'standing':
             bias = 0.5
@@ -583,7 +590,7 @@ class RobotHardware:
             
             self.set_gripper(CLOSED)
             
-            self.move_to(z=self.safe_height)
+            self.move_to(dz=0.05)
             
         else:
             print("error on state")
@@ -818,16 +825,6 @@ def main():
         #robot.move_to(orientation = robot.down_orientation)
         #robot.move_to(orientation = robot.get_rotated_tcp_orientation(Rx = -85))
        
-        #tmp_pose[Z]+=0.01
-        #robot.move_to(tmp_pose)
-        
-        # with open("foo", "w") as f:
-        #     for i in range(0, 8 + 11 + 1, 2):
-        #         base, head = get_base_and_head_camera_points()
-        #         print(f"point {i}:", list(map(float, base)))
-        #         print(f"point {i + 1}:", list(map(float, head)))
-        #         print(f"point {i}:", list(map(float, base)), file=f)
-        #         print(f"point {i + 1}:", list(map(float, head)), file=f)
         
         
         
