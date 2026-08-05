@@ -11,7 +11,7 @@ class PlacementPlanner():
         
 
     def _fen_to_targets(self, fen:str):
-        self.piece_target_stack_array = [[]]*12
+        self.piece_target_stack_array = [[] for _ in range(12)]
         int_grid = parse_fen_to_int_grid(fen)
         for row in range(8):
             for col in range(8):
@@ -28,7 +28,7 @@ class PlacementPlanner():
             return piece_targe_arr.pop()
         cell = self.grave_yard_counter_array[colored_piece]
         self.grave_yard_counter_array[colored_piece]+=1
-        return "s"+INT_TO_FEN[colored_piece]+cell
+        return "s"+INT_TO_FEN[colored_piece]+str(cell)
         
 
     def get_grave_yard(self):

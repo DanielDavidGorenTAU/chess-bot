@@ -10,7 +10,8 @@ from scipy.spatial.transform import Rotation
 import cv2
 import pyzed.sl as sl
 import math
-from common.enums_and_dicts import PieceType
+from common.enums_and_dicts import *
+
 
 
 URI_IP = "192.168.56.101"
@@ -237,6 +238,38 @@ class RobotHardware:
         #global cube_pose
         #cube_pose = RobotHardware.modify_pose(self.positions["a8"], dx=-0.02, dy=-0.09, dz=0.09)
 
+       
+        
+        # Storage starting points (starting near row 1 and moving towards the player)
+        black_storage_start = self.move_on_chessboard(self.positions['a1'][:2], right=-2*CELL_LENGTH, up=-1.5*CELL_LENGTH)
+        white_storage_start = self.move_on_chessboard(self.positions['h1'][:2], right=2*CELL_LENGTH, up=-1.5*CELL_LENGTH)
+
+        # Iterate over all 12 piece types 
+        for piece_int, piece_char in INT_TO_FEN.items():
+            is_white = piece_int >= 6
+            start_pos = white_storage_start if is_white else black_storage_start
+            
+            # Separate column offset for each piece type (0 to 5)
+            type_column_offset = (piece_int % 6) * CELL_LENGTH
+            
+            # Max copies per piece type that can leave the board (8 to be safe)
+            for cell in range(1, 9):
+                storage_key = f"s{piece_char}{cell}"
+                
+                # Move NEGATIVE along the column (getting closer to player)
+                piece_row_offset = -(cell - 1) * CELL_LENGTH
+                
+                # Calculate final xy position
+                direction = 1 if is_white else -1
+                target_xy = self.move_on_chessboard(
+                    start_pos, 
+                    right=type_column_offset * direction, 
+                    up=piece_row_offset
+                )
+                
+                # Save to storage dictionary (including floor height and downward orientation)
+                self.storage[storage_key] = target_xy[:2] + [self.floor_height] + self.down_orientation
+
     def __exit__(self, exc_type, exc_value, traceback):
         try:
             if self.rtde_c is not None:
@@ -261,7 +294,15 @@ class RobotHardware:
 
     def normalize_pos(self, pos):
         if isinstance(pos, str):
-            return self.positions[pos]
+            # Check if the string is a board square ('e4'...)
+            if pos in self.positions:
+                return self.positions[pos]
+            # Check if the string is a storage location ('sP1'...)
+            elif pos in self.storage:
+                return self.storage[pos]
+            else:
+                raise ValueError(f"Position '{pos}' not found in board or storage dictionaries")
+            
         if isinstance(pos, (np.ndarray, tuple)):
             pos = list(map(float, pos))
         if not isinstance(pos, list):

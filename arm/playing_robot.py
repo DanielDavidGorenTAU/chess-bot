@@ -158,19 +158,21 @@ class PlayingArm(PlayingRobot):
 
     # general movement of robot
     # examples
-    # "e3" -> "b6"
-    # "board" -> "b6"
-    # "e3" -> "board
-    def _execute_movement(self, piece: PieceType, start_pos: str = "", end_pos: str = "", move_to_start: bool = True):
+    # "e3" -> "b6" : from square -> square
+    # "sP2" -> "b6" : from storage -> square
+    # "e3" -> "sP2" : from square -> storage
+    def _execute_movement(self, piece: PieceType, start_pos: Optional[str] = None, end_pos: Optional[str] = None, move_to_start: bool = True):
         start_on_board = self._is_on_board(start_pos)
         end_on_board = self._is_on_board(end_pos)
 
         if start_on_board is True and end_on_board is True:                             # from square -> square
             self._move_piece(piece, start_pos, end_pos, move_to_start=move_to_start)
         elif start_on_board is True and end_on_board is False:                          # from square -> storage
-            self._remove_piece(piece, start_pos, move_to_start=move_to_start)
+            # // TODO alocate free sapce to drop for end_pos
+            self._remove_piece(piece, start_pos, end_pos,move_to_start=move_to_start)
         elif start_on_board is False and end_on_board is True:                          # from storage -> square
-            self._bring_on_board(piece, end_pos, move_to_start=move_to_start)
+            # // TODO get space to take from for start_pos
+            self._bring_on_board(piece, end_pos, start_pos, move_to_start=move_to_start)
         else:
             raise ValueError("Invalid square/borad coordinations provided")
 
@@ -204,7 +206,7 @@ class PlayingArm(PlayingRobot):
             if captured_piece is not None: 
                 self._execute_movement(captured_piece, to_square, "storage")                        # remove
             self._execute_movement(PieceType.PAWN, from_square, "storage", move_to_start=False)     # remove
-            self._execute_movement(promoted_piece, "storage", to_square)                            # move
+            self._execute_movement(promoted_piece, "storage", to_square)                            # get
             return True
         except Exception:
             return False        
