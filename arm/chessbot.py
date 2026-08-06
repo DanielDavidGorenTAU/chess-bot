@@ -3,6 +3,7 @@
 import os
 import time
 import sys
+from collections.abc import Sequence
 
 # Ensure the project root is on sys.path when running this module directly from arm/
 #ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -18,6 +19,7 @@ import cv2
 import pyzed.sl as sl
 import math
 from common.enums_and_dicts import *
+from common.utils import weighted_avg
 
 
 
@@ -355,10 +357,10 @@ class RobotHardware:
             else:
                 raise ValueError(f"Position '{pos}' not found in board or storage dictionaries")
             
-        if isinstance(pos, (np.ndarray, tuple)):
-            pos = list(map(float, pos))
+        if not isinstance(pos, Sequence):
+            raise Exception("expected a sequence")
         if not isinstance(pos, list):
-            raise Exception("expected a list")
+            pos = list(map(float, pos))
         if len(pos) == 3:
             return pos + self.down_orientation
         elif len(pos) == 6:
@@ -598,12 +600,6 @@ class RobotHardware:
         R, t = estimate_transform(camera_points, robot_points)
         return list(map(float, R @ camera_vector + t)) + self.down_orientation
 
-    @staticmethod
-    def weighted_avg(x, y, x_bias):
-        if isinstance(x, list):
-            return [RobotHardware.weighted_avg(a, b, x_bias) for a, b in zip(x, y)]
-        return x*x_bias + y*(1-x_bias)
-
     def pick_up_dead_piece(self, type: PieceType = PieceType.QUEEN, state=None, end_pos=None):
         ############################################################### add knight support
         # get robot postions from the interactable camera
@@ -639,12 +635,13 @@ class RobotHardware:
         else:
             bias = 0.6
         middle_position = [
-            *RobotHardware.weighted_avg(head_robot[:2], base_robot[:2], bias),
+            *weighted_avg(head_robot[:2], base_robot[:2], bias),
             0,
             *self.get_rotated_tcp_orientation(Rz=dz+180)
         ]
         
         # fix height
+        # TODO (daniel): the following condition is always True.
         if middle_position[Z] < self.safe_height:
             self.move_to(z=self.safe_height)
 
