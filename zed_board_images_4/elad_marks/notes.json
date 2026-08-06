@@ -1,0 +1,57 @@
+{
+  "categories": [
+    {
+      "id": 0,
+      "name": "black-bishop"
+    },
+    {
+      "id": 1,
+      "name": "black-king"
+    },
+    {
+      "id": 2,
+      "name": "black-knight"
+    },
+    {
+      "id": 3,
+      "name": "black-pawn"
+    },
+    {
+      "id": 4,
+      "name": "black-queen"
+    },
+    {
+      "id": 5,
+      "name": "black-rook"
+    },
+    {
+      "id": 6,
+      "name": "white-bishop"
+    },
+    {
+      "id": 7,
+      "name": "white-king"
+    },
+    {
+      "id": 8,
+      "name": "white-knight"
+    },
+    {
+      "id": 9,
+      "name": "white-pawn"
+    },
+    {
+      "id": 10,
+      "name": "white-queen"
+    },
+    {
+      "id": 11,
+      "name": "white-rook"
+    }
+  ],
+  "info": {
+    "year": 2026,
+    "version": "1.0",
+    "contributor": "Label Studio"
+  }
+}
