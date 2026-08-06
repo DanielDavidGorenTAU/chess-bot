@@ -63,9 +63,9 @@ class GameFactory:
             player_type=self.config.game.black_player, 
             name=self.config.game.black_name
         )
-
+        print(self.config.game.initial_fen)
         return Game(
             white_player=white_player,
             black_player=black_player,
-            initial_fen=self.config.game.initial_fen
+            fen=self.config.game.initial_fen
         )
