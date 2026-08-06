@@ -113,8 +113,9 @@ class BinaryToFenTranslator(Translator):
                 elif old_piece_type != -1 and new_piece_type == -1:
                     # moved from here
                     moved_source.append((row, col))
-                elif old_piece_type != -1 and new_piece_type != -1:
+                elif old_piece_type != -1 and new_piece_type != -1 and old_piece_type != new_piece_type:
                     # captured here
+                    print(f"Captured piece at ({row}, {col}): old_piece_type={old_piece_type}, new_piece_type={new_piece_type}")
                     captured.append((row, col))
 
         print(f"Moved Source: {moved_source}, Moved Target: {moved_target}, Captured: {captured}")

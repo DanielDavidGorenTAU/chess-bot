@@ -12,7 +12,7 @@ MODEL_PATHS = {
     ADVANCED: "/home/checkmate/Documents/chess-bot/runs/detect/chess_training/run_1/weights/best.pt"
 }
 MODEL_CONF = {
-    BINARY: 0.6,
+    BINARY: 0.5,
     UNARY: 0.6,
     ADVANCED: 0.25
 }

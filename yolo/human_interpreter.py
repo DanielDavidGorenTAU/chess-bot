@@ -1,6 +1,6 @@
 from typing import Optional
-from yolo.yolo_model import YoloModel
-from fen_translator import Translator, BinaryToFenTranslator
+from .yolo_model import YoloModel
+from .fen_translator import Translator, BinaryToFenTranslator
 
 
 class HumanMoveInterpreter:
