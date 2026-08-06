@@ -1,4 +1,8 @@
 from .enums_and_dicts import *
+from collections.abc import Sequence
+from common.typing import Vector
+
+
 def convert_square_to_coordinates(square: str):
     """
     Takes a string of chessboard square and converts to matrix coordinate (row, col)
@@ -15,6 +19,7 @@ def convert_square_to_coordinates(square: str):
     col = ord(file) - ord('a')
     row = 8 - int(rank)
     return row, col
+
 
 def convert_coordinates_to_square(row: int, col: int) -> str:
     """
@@ -33,6 +38,7 @@ def convert_coordinates_to_square(row: int, col: int) -> str:
     rank_char = str(8 - row)
 
     return f"{file_char}{rank_char}"
+
 
 def convert_string_to_chessType(letter: str) -> PieceType:
     """
@@ -76,6 +82,7 @@ def parse_fen_to_int_grid(fen_string: str):
 
     return int_grid, active_turn    
 
+
 def grid_to_fen(board_grid, active_turn=1):
     """
     Converts an 8x8 integer grid (0-11, -1) into a FEN string.
@@ -100,6 +107,7 @@ def grid_to_fen(board_grid, active_turn=1):
     board_fen = "/".join(fen_rows)
     return f"{board_fen} {char_active_turn} - - 0 1"
 
+
 def get_color(label):
     if label<0:
         return -1
@@ -107,3 +115,9 @@ def get_color(label):
         return 0  # black
     else:
         return 1  # white
+
+
+def weighted_avg(x: float | Vector, y: float | Vector, x_bias: float) -> float | Vector:
+    if isinstance(x, Sequence):
+        return [weighted_avg(a, b, x_bias) for a, b in zip(x, y)]
+    return x*x_bias + y*(1-x_bias)
