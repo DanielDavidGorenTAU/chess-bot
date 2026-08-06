@@ -1,10 +1,17 @@
 #!/usr/bin/python3
 
+import os
 import time
 import sys
+
+# Ensure the project root is on sys.path when running this module directly from arm/
+#ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+#if ROOT_DIR not in sys.path:
+#    sys.path.insert(0, ROOT_DIR)
+
 from rtde_control import RTDEControlInterface
 from rtde_receive import RTDEReceiveInterface
-from robotiq_gripper import RobotiqGripper
+from .robotiq_gripper import RobotiqGripper
 import numpy as np
 from scipy.spatial.transform import Rotation
 import cv2
@@ -14,16 +21,12 @@ from common.enums_and_dicts import *
 
 
 
-URI_IP = "192.168.56.101"
 AYAL_IP = "192.168.57.101"
 
-A1_URI = [0.08205673493996721, -0.6753187762204925, 0.024844870270488956, 2.247469008346155, -2.146149708890044, 0]
-H8_URI = [-0.20489910222067206, -0.4023634743625998, 0.025756493662524194, 2.247613176209329, -2.1463343846561838, 0]
-A1_AYAL = [-0.6380040110576192, -0.2531378443418727, -0.260572163219061, 0, np.pi, 0.022472703400519555]
-H8_AYAL = [-0.2987299395625931, 0.0842661900205246, -0.26160276149474504, 0, np.pi, 0.02247581820845158]
-rad = math.atan2(H8_AYAL[1] - A1_AYAL[1], H8_AYAL[0] - A1_AYAL[0])
-#A1_AYAL[5] = rad-np.pi/4
-#H8_AYAL[5] = rad-np.pi/4
+
+A1_AYAL = [-0.30910234283558746, 0.08718276235322243, -0.2618899643277862]
+H8_AYAL = [-0.6554921001707903, -0.2454062854094731, -0.26098000331722737]
+
 
 
 A1_ = A1_AYAL
@@ -34,6 +37,21 @@ BASE_TCP_PORT = 63352
 
 
 camera_points = np.array([
+    [0.29374116659164429, -0.28721150755882263, 0.96119987964630127],  # 0
+    [0.18302488327026367, -0.27834638953208923, 0.94977778196334839],  # 1
+    [0.24009072780609131, -0.29439333081245422, 0.96363681554794312],  # 2
+    [0.14599396288394928, -0.29334694147109985, 0.95721393823623657],  # 3
+    [0.11957525461912155, -0.31036916375160217, 0.97325903177261353],  # 4
+    [0.27712315320968628, -0.33313399553298950, 0.99395102262496948],  # 5
+    [0.20928341150283813, -0.34620821475982666, 1.00151193141937256],  # 6
+    [0.12526512145996094, -0.35184830427169800, 1.00393486022949219],  # 7
+    [0.16999216377735138, -0.37066981196403503, 1.01870524883270264],  # 8
+    [0.21837791800498962, -0.38617500662803650, 1.02623879909515381],  # 9
+    [0.07532792538404465, -0.38368144631385803, 1.01702654361724854],  # 10
+    [0.05061684548854828, -0.40000265836715698, 1.02897500991821289],  # 11
+])
+
+camera_points2 = np.array([
     [0.40257397294044495, -0.34002265334129333, 0.988902747631073],  # 0
     [0.3625788986682892, -0.3380884528160095, 0.9805485010147095],  # 1
     [0.2902766466140747, -0.34211573004722595, 0.9867141246795654],  # 2
@@ -49,6 +67,21 @@ camera_points = np.array([
 ])
 
 robot_points = np.array([
+    [-0.7012659839948736, -0.36316477753682014, -0.2629104676755676], #0
+    [-0.5900482619985574, -0.3595256257140383, -0.26228564856932446], #1
+    [-0.6480715733896221, -0.37616930509489405, -0.2627222131698685], #2
+    [-0.5541025856381359, -0.3806098445930635, -0.2625319532873043], #3
+    [-0.5284380828768849, -0.3969404209009367, -0.26215577627172115], #4
+    [-0.687144429737599, -0.4178712244616745, -0.26267655065065776], #5
+    [-0.620520235719668, -0.43662875047067506, -0.26251519745684626], #6
+    [-0.5371476496847898, -0.4464128166603337, -0.26232976927617246], #7
+    [-0.5815144008749253, -0.4668723914261121, -0.2624767078247795], #8
+    [-0.6323517706573076, -0.4846493274675403, -0.26217576437641954], #9
+    [-0.4900585153023277, -0.48835648731153797, -0.2613942279635535], #10
+    [-0.46645107240335487, -0.509527819031739, -0.26224239902696767], #11
+])
+
+robot_points2 = np.array([
     [-0.7249947977068212, -0.5267856333788881, -0.262378442307538], #0
     [-0.6880618147897322, -0.5268587206226445, -0.26323269512522585], #1
     [-0.6144277824990243, -0.5325676978885787, -0.2628489558319545], #2
@@ -73,8 +106,8 @@ grip_size = {
 }
 
 X, Y, Z, RX, RY, RZ = 0,1,2,3,4,5
-GRIP_RELEASE_OFFSET = 30
-GRIP_RELEASE_HEIGHT = 0.005
+GRIP_RELEASE_OFFSET = 35
+GRIP_RELEASE_HEIGHT = 0.001
 CLOSED = 255
 OPENED = 0
 HALF_OPENED = 140
@@ -85,8 +118,8 @@ clicked_point = None
 point_cloud = sl.Mat()
 
 
-cube_pose = [-0.760355218564025, -0.22046205623604848, -0.20126686211875833, -0.00023917019549998052, 3.141438559820613, 0.02259035864233554]
-BASE_EYAL = [-0.11131650606264287, -1.1058288377574463, 2.2839859167682093, -2.7503401241698207, -1.5825117270099085, -1.6749289671527308]
+cube_pose = [-0.742415772867873, -0.24372010489600388, -0.2014668656338109, -0.00023917019549998052, 3.141438559820613, 0.02259035864233554]
+BASE_EYAL = [-0.09351092973817998, -0.9892049592784424, 1.5416072050677698, -2.1219431362547816, -1.5528257528888147, -1.6598318258868616]
 
 def reset_gripper(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT):
     print("Reset arg detected: resetting and activating gripper...")
@@ -115,7 +148,7 @@ def reset_gripper(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT):
 
 def move_to_start_postion():
     with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
-        robot.move_to(robot.start_position, z=robot.safe_height)
+        robot.move_to(robot.start_position, z=robot.sky_height)
     sys.exit(0)
 
 def grip_close():
@@ -130,7 +163,7 @@ def grip_open():
 
 def print_position():
     with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
-        print(robot.pose[:])
+        print(robot.pose[:3])
     sys.exit(0)
 
 def align_position():
@@ -151,7 +184,7 @@ def print_joints():
 
 
 class RobotHardware:
-    def __init__(self, robot_ip=None, base_tcp_port=None, speed=0.1, acceleration=0.1, A1 = None, H8 = None):
+    def __init__(self, robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, speed=0.1, acceleration=0.1, A1 = None, H8 = None):
         self.robot_ip = robot_ip
         self.base_tcp_port = base_tcp_port
         self.speed = speed
@@ -159,8 +192,8 @@ class RobotHardware:
         self.rtde_c = None
         self.rtde_r = None
         self.gripper = None
-        self.A1 = A1
-        self.H8 = H8
+        self.A1 = A1_
+        self.H8 = H8_
         self.step_right = [0, 0]
         self.step_up = [0, 0]
         self.floor_height = 0
@@ -210,7 +243,9 @@ class RobotHardware:
         self.step_up[0] = -self.step_right[Y]
         self.step_up[1] = self.step_right[X]
 
-        self.down_orientation = [(h8[RX] + a1[RX]) / 2, (h8[RY] + a1[RY]) / 2, (h8[RZ] + a1[RZ]) / 2]
+        rad = math.atan2(h8[1] - a1[1], h8[0] - a1[0])
+        #self.down_orientation = [0, np.pi, rad-np.pi/4] // backwards board
+        self.down_orientation = [0, np.pi, rad-np.pi/4 + np.pi]
         self.floor_height = (h8[Z] + a1[Z]) / 2 + 0.0015 # offset
         self.sky_height = self.floor_height + 0.3
 
@@ -222,7 +257,10 @@ class RobotHardware:
                 tmp_pos = self.move_on_chessboard(tmp_pos, right=CELL_LENGTH, up=0)
             tmp_pos = self.move_on_chessboard(tmp_pos, right=-8*CELL_LENGTH, up=CELL_LENGTH)
 
-        self.start_position = self.move_on_chessboard(self.positions['a5'], right = -CELL_LENGTH/2, up = -CELL_LENGTH/2)
+        # rotated board self.start_position = self.move_on_chessboard(self.positions['a5'], right = -CELL_LENGTH/2, up = -CELL_LENGTH/2)
+        self.start_position = self.move_on_chessboard(self.positions['h5'], right = CELL_LENGTH/2, up = CELL_LENGTH/2)
+
+
         self.start_position[Z] = self.sky_height
 
         self.grip_height[PieceType.QUEEN] = self.floor_height + 0.04
@@ -238,8 +276,22 @@ class RobotHardware:
         #global cube_pose
         #cube_pose = RobotHardware.modify_pose(self.positions["a8"], dx=-0.02, dy=-0.09, dz=0.09)
 
-       
-        
+        #storage_start = self.move_on_chessboard(self.positions['a1'], right=-0.4*CELL_LENGTH, up=-2.5*CELL_LENGTH)
+        storage_start = self.move_on_chessboard(self.positions['h8'], right=0.4*CELL_LENGTH, up=2.5*CELL_LENGTH)
+        for type in "PNBRQKpnbrqk":
+            for i in range(1, 9):
+                self.positions[f's{type}{i}'] = storage_start
+            
+        #for row in range(1, 5):
+        #    tmp_pos = 
+        #    for col in range(1,9):
+        #        if row == 1:
+        #            self.storage[f"sr1"] = 
+
+
+
+
+        """
         # Storage starting points (starting near row 1 and moving towards the player)
         black_storage_start = self.move_on_chessboard(self.positions['a1'][:2], right=-2*CELL_LENGTH, up=-1.5*CELL_LENGTH)
         white_storage_start = self.move_on_chessboard(self.positions['h1'][:2], right=2*CELL_LENGTH, up=-1.5*CELL_LENGTH)
@@ -269,7 +321,7 @@ class RobotHardware:
                 
                 # Save to storage dictionary (including floor height and downward orientation)
                 self.storage[storage_key] = target_xy[:2] + [self.floor_height] + self.down_orientation
-
+        """
     def __exit__(self, exc_type, exc_value, traceback):
         try:
             if self.rtde_c is not None:
@@ -367,7 +419,7 @@ class RobotHardware:
         self.rtde_c.moveL(target_pose, speed, acceleration)
         return target_pose
 
-    def set_gripper(self, position=None, close_by=None, open_by=None, speed=120, force=0, wait = True):
+    def set_gripper(self, position=None, close_by=None, open_by=None, speed=60, force=0, wait = True):
         if position is None and close_by is None and open_by is None:
             raise Exception("expected position or close_by or open_by")
         if position is None:
@@ -480,12 +532,13 @@ class RobotHardware:
         self.move_to(end_pos, z=self.safe_height, speed=speed, acceleration=acceleration)
         self.move_to(z=self.grip_height[type] + GRIP_RELEASE_HEIGHT)
         
-        self.set_gripper(self.get_gripper() - GRIP_RELEASE_OFFSET) # release the piece
-        
+        #self.set_gripper(self.get_gripper() - GRIP_RELEASE_OFFSET) # release the piece
+        self.set_gripper(open_by=GRIP_RELEASE_OFFSET, speed=10) # release the piece
+
         # return to start postion
         self.move_to(z=self.safe_height)
         if move_to_start:
-            self.move_to(self.start_position, z=self.safe_height, speed=speed, acceleration=acceleration)
+            self.move_to(self.start_position, z=self.sky_height, speed=speed, acceleration=acceleration)
 
     def move_smooth_path___experimental(self, steps, blend_radius=0.03, speed=None, acceleration=None):
         
@@ -615,8 +668,8 @@ class RobotHardware:
             # release standing piece
             self.set_gripper(self.get_gripper() - GRIP_RELEASE_OFFSET)
 
-            # straighten the arm back   /    dx = 0.01
-            self.move_to(cube_pose,dx=-0.01, z=cube_pose[Z] - self.floor_height + self.grip_height[type]- 0.01) 
+            # straighten the arm back   /    dx = 0.01                                                     -00.01
+            self.move_to(cube_pose,dx=-0.005, z=cube_pose[Z] - self.floor_height + self.grip_height[type]- 0.00) 
 
             self.set_gripper(CLOSED) # grip the piece
 
@@ -652,7 +705,7 @@ class RobotHardware:
         self.set_gripper(open_by=GRIP_RELEASE_OFFSET)
         self.move_to(z=self.safe_height)
         #self.rtde_c.moveJ(BASE_EYAL, 1, 0.5)
-        self.move_to(self.start_position, z=self.safe_height)
+        self.move_to(self.start_position, z=self.sky_height)
 
     ### I moved it to the right class, so can delete here ###        
     def capture_piece(self, type: PieceType, start_pos, end_pos = None, rz_start=None, move_to_start=True):
@@ -788,6 +841,61 @@ def get_base_and_head_camera_points():
 
     return base_point, head_point
 
+def get_12_camera_points():
+    global clicked_point, point_cloud
+    points = []
+
+    zed = sl.Camera()
+    init_params = sl.InitParameters()
+    init_params.depth_mode = sl.DEPTH_MODE.ULTRA
+    init_params.coordinate_units = sl.UNIT.METER
+    init_params.camera_resolution = sl.RESOLUTION.HD2K
+
+    if zed.open(init_params) != sl.ERROR_CODE.SUCCESS:
+        print("Failed to open ZED")
+        return []
+
+    image = sl.Mat()
+    runtime_params = sl.RuntimeParameters()
+
+    cv2.namedWindow("ZED")
+    cv2.setMouseCallback("ZED", mouse_callback)
+
+    while len(points) < 12:
+        if zed.grab(runtime_params) == sl.ERROR_CODE.SUCCESS:
+            zed.retrieve_image(image, sl.VIEW.LEFT)
+            zed.retrieve_measure(point_cloud, sl.MEASURE.XYZ)
+            frame = image.get_data()
+
+            if clicked_point is not None:
+                x, y = clicked_point
+                err, point3d = point_cloud.get_value(x, y)
+                if err == sl.ERROR_CODE.SUCCESS:
+                    X_, Y_, Z_ = point3d[:3]
+                    if np.isfinite(X_) and np.isfinite(Y_) and np.isfinite(Z_):
+                        points.append([float(X_), float(Y_), float(Z_)])
+                        print(f"Captured point #{len(points) - 1}: X={X_:.3f}, Y={Y_:.3f}, Z={Z_:.3f} meters")
+                    else:
+                        print("Invalid depth at this pixel")
+
+                clicked_point = None
+
+            cv2.imshow("ZED", frame)
+
+        key = cv2.waitKey(1)
+        if key == 27:  # ESC
+            break
+
+    zed.close()
+    cv2.destroyAllWindows()
+
+    print("camera_points = np.array([")
+    for i, point in enumerate(points):
+        print(f"    [{point[0]:.17f}, {point[1]:.17f}, {point[2]:.17f}],  # {i}")
+    print("])")
+
+    return points
+
 def get_head_camera_point():
     global clicked_point, point_cloud
     base_point = None
@@ -858,18 +966,13 @@ def main():
         print("starting session")
         #robot.rtde_c.moveJ(BASE_URI, 1, 0.5)
         #robot.move_to(robot.start_position, z=robot.sky_height)
-        #robot.move_to(robot.positions['h8'])
-        #robot.pick_up_dead_piece(PieceType.QUEEN, "lying", "a1")
-        #robot.mov_chess_piece(PieceType.PAWN, "h6", "a8")
-        robot.move_and_capture_piece((PieceType.PAWN, "b2"), (PieceType.QUEEN,"c3"))
-        #robot.pick_up_dead_piece(PieceType.QUEEN, "lying", "c1")
-        #robot.move_to(orientation = robot.down_orientation)
-        #robot.move_to(orientation = robot.get_rotated_tcp_orientation(Rx = -85))
-       
+        
+        #robot.move_to(z=robot.sky_height)
+        #robot.move_to(robot.move_on_chessboard(robot.positions['a1'], right=-0.4*CELL_LENGTH, up=-2.5*CELL_LENGTH))
         
         
-        
-        robot.move_to(robot.start_position, z=robot.sky_height)
+
+        #robot.move_to(robot.start_position, z=robot.sky_height)
         print("end of session")
 
         
@@ -897,23 +1000,9 @@ if __name__ == "__main__":
 
 
 
-#print(robot.positions['a1'][0:3])
-        #print(robot.positions['c2'][0:3])
-        #print(robot.positions['e3'][0:3])
-        #print(robot.positions['f6'][0:3])
-        #print(robot.positions['h7'][0:3])
-        #print(robot.positions['h3'][0:3])
-        #print(robot.positions['b7'][0:3])
-        #print(robot.positions['c6'][0:3])
 
-        # with open("output", "a") as f:
-        #     for i in range(0, 8 + 11 + 1, 2):
-        #         base, head = get_base_and_head_camera_points()
-        #         print(f"point {i}:", list(map(float, base)))
-        #         print(f"point {i + 1}:", list(map(float, head)))
-        #         print(f"point {i}:", list(map(float, base)), file=f)
-        #         print(f"point {i + 1}:", list(map(float, head)), file=f)
-        #         f.flush()
 
-    #robot.pick_up_dead_piece(PieceType.QUEEN, "lying", "a1")
-    #robot.move_and_capture_piece((PieceType.PAWN", "b2"), (PieceType.QUEEN,"c3"))
+    #robot.mov_chess_piece(PieceType.PAWN, "b1", "c3")
+    #robot.move_and_capture_piece((PieceType.PAWN, "b2"), (PieceType.QUEEN,"c3"))
+    #robot.pick_up_dead_piece(PieceType.QUEEN, "lying", "c1")
+    #robot.move_to([*get_head_camera_point()] + robot.down_orientation)

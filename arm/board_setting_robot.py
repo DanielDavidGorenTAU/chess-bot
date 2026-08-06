@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional
 from common.enums_and_dicts import PieceType
-from chessbot import *
+from .chessbot import *
 
 class BoardSettingRobot(ABC):
 
@@ -85,7 +85,7 @@ class BoardSettingArm(BoardSettingRobot):
 
             # straighten the arm back   
             #self.move_to(cube_pose,dx=-0.01, z=cube_pose[Z] - self.floor_height + self.grip_height[type]- 0.01) 
-            self.move_to(cube_pose,dx=-0.01, z=cube_pose[Z] +0.05) 
+            self.move_to(cube_pose,dx=-0.005, z=cube_pose[Z] +0.05) 
 
             self.move_to(dz=0.05) # raise the arm
 
@@ -113,8 +113,9 @@ class BoardSettingArm(BoardSettingRobot):
             raise ValueError("Invalid standing/lying state provided")
             
     def move_from_platform_to_target(self, target: str, type: str) -> bool:
-        # grip from the cube
-        self.move_to(cube_pose,dx=-0.01, z=cube_pose[Z] - self.floor_height + self.grip_height[type]- 0.01)     
+        # grip from the cube   
+        #               -0.01                                                              -0.01                                                      
+        self.move_to(dx=-0.00, z=cube_pose[Z] - self.floor_height + self.grip_height[type]- 0.00)     
         self.set_gripper(CLOSED) # grip the piece
         self.move_to(dz=0.05) # raise the arm
 
@@ -131,8 +132,9 @@ class BoardSettingArm(BoardSettingRobot):
         
         self.set_gripper(open_by=GRIP_RELEASE_OFFSET)
         self.move_to(z=self.safe_height)
-        #self.rtde_c.moveJ(BASE_EYAL, 1, 0.5)
-        self.move_to(self.start_position, z=self.safe_height)
+        
+        self.move_to(self.start_position, z=self.sky_height)
+        self.rtde_c.moveJ(BASE_EYAL, 1, 0.5) # align gripper
 
 
     
