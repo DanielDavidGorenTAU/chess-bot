@@ -1,4 +1,4 @@
-from enums_and_dicts import *
+from .enums_and_dicts import *
 def convert_square_to_coordinates(square: str):
     """
     Takes a string of chessboard square and converts to matrix coordinate (row, col)

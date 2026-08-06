@@ -2,8 +2,13 @@ import chess
 import chess.engine
 import argparse
 from common.exceptions import EngineNoMove
+from pathlib import Path
 
-ENGINE_PATH ="./stockfish/stockfish-ubuntu-x86-64-avx2"
+ENGINE_PATH = (
+    Path(__file__).resolve().parent
+    / "stockfish"
+    / "stockfish-ubuntu-x86-64-avx2"
+)
 
 class ChessEngine:
     def choose_move(self, fen: str, engine_path=ENGINE_PATH) -> str:
