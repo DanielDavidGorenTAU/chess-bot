@@ -45,11 +45,12 @@ class AppConfig:
     vision: VisionConfig = field(default_factory=VisionConfig)
 
     @classmethod
-    def load(cls, filepath: str = "config.yaml") -> "AppConfig":
+    def load(cls, filepath: str = "/home/checkmate/Documents/chess-bot/main/config.yaml") -> "AppConfig":
         """Loads config from YAML or JSON file."""
         if not os.path.exists(filepath):
             print(f"[Config] File '{filepath}' not found. Loading defaults.")
             return cls()
+        
 
         data: Dict[str, Any] = {}
         if filepath.endswith(".yaml") or filepath.endswith(".yml"):

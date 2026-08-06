@@ -1,13 +1,13 @@
-from config import AppConfig
+from .config import AppConfig
 from factories.hardware_factory import HardwareFactory
 from factories.board_setup_factory import BoardSetupFactory
 from factories.game_factory import GameFactory
-from session import ChessSession
+from .session import ChessSession
 
 
 if __name__ == "__main__":
     # 1. Load system settings
-    config = AppConfig.load("config.yaml")
+    config = AppConfig.load("/home/checkmate/Documents/chess-bot/main/config.yaml")
 
     # 2. Instantiate hardware factory (creates shared camera/robot references)
     hw_factory = HardwareFactory(config)
