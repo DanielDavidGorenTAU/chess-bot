@@ -1,16 +1,16 @@
 from typing import Optional
-from .yolo_model import YoloModel
+from .board_pieces_detector import BoardPiecesDetector
 from .fen_translator import Translator, BinaryToFenTranslator
 
 
 class HumanMoveInterpreter:
     """
-    Coordinates between the vision system (YoloModel) and state translation (Translator)
+    Coordinates between the vision system (BoardPiecesDetector) and state translation (Translator)
     to compute updated FEN strings after a human player makes a move.
     """
 
-    def __init__(self, yolo_model: YoloModel, translator: Optional[Translator] = None):
-        self.yolo_model: YoloModel = yolo_model
+    def __init__(self, yolo_model: BoardPiecesDetector, translator: Optional[Translator] = None):
+        self.yolo_model: BoardPiecesDetector = yolo_model
         # Default to BinaryToFenTranslator if none is supplied
         self.translator: Translator = translator or BinaryToFenTranslator()
 

@@ -3,7 +3,7 @@ from yolo.orientation_detector import OrientationDetector
 from yolo.platform_piece_classifier import PlatformPieceClassifier
 from .placement_planner import PlacementPlanner
 from common.exceptions import RobotFailedException
-from common.enums_and_dicts import INT_TO_NAME
+from common.enums_and_dicts import INT_TO_NAME, ColoredPieceType
 
 class PieceIngestionPipeline:
     """Handles pre-game board arrangement and piece alignment."""
@@ -15,20 +15,20 @@ class PieceIngestionPipeline:
         
 
     def process_next_piece(self):
-            # Step 1 & 2: Take picture & detect orientation
+            # 1. Take picture & detect orientation
             head, base, orientation = self.orientation_detector.detect_pickup_pose()
 
-            # Step 3: Arm move piece to platform
+            # 2. Arm move piece to platform
             if not self.robot.move_piece_to_platform(head, base, orientation):
                 raise RobotFailedException("Robot failed while moving piece to platform")
 
-            # Step 4: Detect piece class on platform
-            piece_type = self.platform_classifier.identify_piece()
+            # 3. Detect piece class on platform
+            piece_type: ColoredPieceType = self.platform_classifier.identify_piece()
 
-            # Step 5: Decide where to put on (board or grave yard)
+            # 4. Decide where to put on (board or grave yard)
             target_square = self.placement_planner.get_targer_for_piece(piece_type)
 
-            # Step 6: Move piece from platform to board
+            # 5. Move piece from platform to board
             if not self.robot.move_from_platform_to_target(target_square):
                 raise RobotFailedException("Robot failed while moving piece from platform to target "+target_square)
 
