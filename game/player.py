@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
-from reactions import ReactionWaiter, ConsoleEnterReaction
+from .reactions import ReactionWaiter, ConsoleEnterReaction
 from yolo.human_interpreter import HumanMoveInterpreter
-from actions import ChessAction
-from action_interpreter import ActionFactory
+from .actions import ChessAction
+from .action_interpreter import ActionFactory
 from arm.playing_robot import PlayingRobot 
 from common.exceptions import RobotFailedException
 from ChessLogic.engine import ChessEngine
@@ -30,17 +30,19 @@ class Player(ABC):
 
 
 class HumanPlayer(Player):
-    def __init__(self, name: str = "Human", reaction_waiter: ReactionWaiter = None, interpeter: HumanMoveInterpreter = None):
+    def __init__(self, name: str = "Human", reaction_waiter: ReactionWaiter = None, interpreter: HumanMoveInterpreter = None):
         super().__init__(name)
         # Default to pressing Enter if no reaction waiter is specified
         self.reaction_waiter : ReactionWaiter = reaction_waiter or ConsoleEnterReaction()
-        self.interpeter: HumanMoveInterpreter = interpeter
+        self.interpreter: HumanMoveInterpreter = interpreter
 
     def prepare_move(self, fen: str):
         self.reaction_waiter.wait() #waits for human reaction
 
     def execute_move(self, fen: str) -> str:
-        return self.interpeter.update_fen(fen)
+        new_fen = self.interpreter.update_fen(fen)
+        print(f"[HumanPlayer] Move executed. New FEN: {new_fen}")
+        return new_fen
   
         
 
@@ -56,6 +58,7 @@ class RobotPlayer(Player):
     
     def prepare_move(self, fen: str):
         self.cur_move = self.engine.choose_move(fen)
+        print(f"[RobotPlayer] Move prepared: {self.cur_move}")
 
     def execute_move(self, fen: str) -> str:
         action: ChessAction = self.action_factory.interpret_action(self.cur_move, fen)

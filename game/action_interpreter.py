@@ -1,4 +1,4 @@
-from actions import *
+from .actions import *
 from common.utils import *
 class ActionFactory():
     """ Generates action provided the current boatd and move """
@@ -29,7 +29,7 @@ class ActionFactory():
         to_r, to_c = convert_square_to_coordinates(to_sq)
         grid, turn = parse_fen_to_int_grid(fen)
 
-        from_val = grid[from_r, from_c]
+        from_val = grid[from_r][from_c]
         to_val = grid[to_r][to_c]
 
         moving_piece = PieceType(from_val % 6)

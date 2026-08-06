@@ -1,4 +1,4 @@
-from player import Player
+from .player import Player
 
 DEFAULT_STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
@@ -27,7 +27,7 @@ class Game:
         print(f"Active turn: {current_turn_name} ({self.turn})")
         while self.is_running:
             cur_player = self.players[self.turn]
-            self.fen = cur_player.execute_move(self.fen)
+            self.fen = cur_player.make_move(self.fen)
             self.turn = 1 - self.turn
 
 
