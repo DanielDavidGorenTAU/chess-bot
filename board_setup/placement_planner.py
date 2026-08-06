@@ -1,5 +1,5 @@
 from common.utils import parse_fen_to_int_grid, convert_coordinates_to_square
-from common.enums_and_dicts import INT_TO_FEN
+from common.enums_and_dicts import INT_TO_FEN, ColoredPieceType
 
 class PlacementPlanner():
     """Given desired FEN string and piece computes the target placement for piece"""
@@ -22,13 +22,14 @@ class PlacementPlanner():
 
 
 
-    def get_targer_for_piece(self, colored_piece: int) -> str: ###TODO: maybe change to enum
-        piece_targe_arr = self.piece_target_stack_array[colored_piece]
+    def get_targer_for_piece(self, colored_piece: ColoredPieceType) -> str: 
+        int_class = int(colored_piece)
+        piece_targe_arr = self.piece_target_stack_array[int_class]
         if len(piece_targe_arr)>0:
             return piece_targe_arr.pop()
-        cell = self.grave_yard_counter_array[colored_piece]
+        cell = self.grave_yard_counter_array[int_class]
         self.grave_yard_counter_array[colored_piece]+=1
-        return "s"+INT_TO_FEN[colored_piece]+str(cell)
+        return "s"+INT_TO_FEN[int_class]+str(cell)
         
 
     def get_grave_yard(self):
