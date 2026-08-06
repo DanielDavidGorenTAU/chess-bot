@@ -1,6 +1,13 @@
 from .enums_and_dicts import *
 from collections.abc import Sequence
+from math import hypot
 from common.typing import Vector
+
+
+X, Y, Z, RX, RY, RZ = 0, 1, 2, 3, 4, 5
+CLOSED = 255
+HALF_OPENED = 140
+OPENED = 0
 
 
 def convert_square_to_coordinates(square: str):
@@ -121,3 +128,15 @@ def weighted_avg(x: float | Vector, y: float | Vector, x_bias: float) -> float |
     if isinstance(x, Sequence):
         return [weighted_avg(a, b, x_bias) for a, b in zip(x, y)]
     return x*x_bias + y*(1-x_bias)
+
+
+def distance(v: Vector, u: Vector) -> float:
+    assert len(v) == len(u)
+    return hypot(*(a - b for a, b in zip(v, u)))
+
+def is_close(a: float | Vector, b: float | Vector, epsilon: float = 0.001) -> float:
+    if isinstance(a, float) and isinstance(b, float):
+        return (abs(a - b) < epsilon)
+    if isinstance(a, Sequence) and isinstance(b, Sequence):
+        return (distance(a, b) < epsilon)
+    raise TypeError("bad type for a and b")

@@ -4,6 +4,9 @@ import os
 import time
 import sys
 from collections.abc import Sequence
+from typing import override
+from .measurements import *
+from .abstract_robot_hardware import AbstractRobotHardware
 
 # Ensure the project root is on sys.path when running this module directly from arm/
 #ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -19,109 +22,12 @@ import cv2
 import pyzed.sl as sl
 import math
 from common.enums_and_dicts import *
-from common.utils import weighted_avg
+from common.utils import *
 
-
-
-AYAL_IP = "192.168.57.101"
-
-
-A1_AYAL = [-0.30910234283558746, 0.08718276235322243, -0.2618899643277862]
-H8_AYAL = [-0.6554921001707903, -0.2454062854094731, -0.26098000331722737]
-
-
-
-A1_ = A1_AYAL
-H8_ = H8_AYAL
-ROBOT_IP = AYAL_IP
-BASE_TCP_PORT = 63352
-
-
-
-camera_points = np.array([
-    [0.29374116659164429, -0.28721150755882263, 0.96119987964630127],  # 0
-    [0.18302488327026367, -0.27834638953208923, 0.94977778196334839],  # 1
-    [0.24009072780609131, -0.29439333081245422, 0.96363681554794312],  # 2
-    [0.14599396288394928, -0.29334694147109985, 0.95721393823623657],  # 3
-    [0.11957525461912155, -0.31036916375160217, 0.97325903177261353],  # 4
-    [0.27712315320968628, -0.33313399553298950, 0.99395102262496948],  # 5
-    [0.20928341150283813, -0.34620821475982666, 1.00151193141937256],  # 6
-    [0.12526512145996094, -0.35184830427169800, 1.00393486022949219],  # 7
-    [0.16999216377735138, -0.37066981196403503, 1.01870524883270264],  # 8
-    [0.21837791800498962, -0.38617500662803650, 1.02623879909515381],  # 9
-    [0.07532792538404465, -0.38368144631385803, 1.01702654361724854],  # 10
-    [0.05061684548854828, -0.40000265836715698, 1.02897500991821289],  # 11
-])
-
-camera_points2 = np.array([
-    [0.40257397294044495, -0.34002265334129333, 0.988902747631073],  # 0
-    [0.3625788986682892, -0.3380884528160095, 0.9805485010147095],  # 1
-    [0.2902766466140747, -0.34211573004722595, 0.9867141246795654],  # 2
-    [0.25245147943496704, -0.34298500418663025, 0.9864984750747681],  # 3
-    [0.2882465124130249, -0.30654796957969666, 0.9611337184906006],  # 4
-    [0.3262558579444885, -0.2835009694099426, 0.9486410021781921],  # 5
-    [0.327038437128067, -0.2541588842868805, 0.9277397990226746],  # 6
-    [0.25592976808547974, -0.21685761213302612, 0.9054252505302429],  # 7
-    [0.3537868559360504, -0.19351230561733246, 0.8857852220535278],  # 8
-    [0.2915896475315094, -0.19612891972064972, 0.889966607093811],  # 9
-    [0.35213956236839294, -0.16620256006717682, 0.8670176267623901],  # 10
-    [0.29412367939949036, -0.15915027260780334, 0.8647645115852356],  # 11
-])
-
-robot_points = np.array([
-    [-0.7012659839948736, -0.36316477753682014, -0.2629104676755676], #0
-    [-0.5900482619985574, -0.3595256257140383, -0.26228564856932446], #1
-    [-0.6480715733896221, -0.37616930509489405, -0.2627222131698685], #2
-    [-0.5541025856381359, -0.3806098445930635, -0.2625319532873043], #3
-    [-0.5284380828768849, -0.3969404209009367, -0.26215577627172115], #4
-    [-0.687144429737599, -0.4178712244616745, -0.26267655065065776], #5
-    [-0.620520235719668, -0.43662875047067506, -0.26251519745684626], #6
-    [-0.5371476496847898, -0.4464128166603337, -0.26232976927617246], #7
-    [-0.5815144008749253, -0.4668723914261121, -0.2624767078247795], #8
-    [-0.6323517706573076, -0.4846493274675403, -0.26217576437641954], #9
-    [-0.4900585153023277, -0.48835648731153797, -0.2613942279635535], #10
-    [-0.46645107240335487, -0.509527819031739, -0.26224239902696767], #11
-])
-
-robot_points2 = np.array([
-    [-0.7249947977068212, -0.5267856333788881, -0.262378442307538], #0
-    [-0.6880618147897322, -0.5268587206226445, -0.26323269512522585], #1
-    [-0.6144277824990243, -0.5325676978885787, -0.2628489558319545], #2
-    [-0.57676539117318, -0.5336532600330266, -0.2626081849690853], #3
-    [-0.6118527294858108, -0.4915335521198404, -0.26325969622180423], #4
-    [-0.6473464142855513, -0.45910513580369394, -0.26232567896498143], #5
-    [-0.6481519846466364, -0.4256951367784092, -0.26274898797695984], #6
-    [-0.57728156343802, -0.38379528541886104, -0.26360652643074456], #7
-    [-0.6743646975517856, -0.35349122068883093, -0.26415130514677343], #8
-    [-0.6105459715410131, -0.35471354910395103, -0.2625496176206895], #9
-    [-0.6720680685624673, -0.32013044067751106, -0.262824321430711], #10
-    [-0.6136742072837144, -0.31433334607658586, -0.2633830155207719], #11
-])
-
-grip_size = {
-    PieceType.QUEEN: 179,  # מלכה
-    PieceType.PAWN: 196,   # רגלי
-    PieceType.KING: 176,   # מלך
-    PieceType.ROOK: 182,   # צריח
-    PieceType.KNIGHT: 204, # פרש
-    PieceType.BISHOP: 190, # רץ
-}
-
-X, Y, Z, RX, RY, RZ = 0,1,2,3,4,5
-GRIP_RELEASE_OFFSET = 35
-GRIP_RELEASE_HEIGHT = 0.001
-CLOSED = 255
-OPENED = 0
-HALF_OPENED = 140
-OFFSET_TO_TABLE_HEIGHT = -0.00 # -0.02
-CELL_LENGTH = 4.75 #cm
 
 clicked_point = None
 point_cloud = sl.Mat()
 
-
-cube_pose = [-0.742415772867873, -0.24372010489600388, -0.2014668656338109, -0.00023917019549998052, 3.141438559820613, 0.02259035864233554]
-BASE_EYAL = [-0.09351092973817998, -0.9892049592784424, 1.5416072050677698, -2.1219431362547816, -1.5528257528888147, -1.6598318258868616]
 
 def reset_gripper(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT):
     print("Reset arg detected: resetting and activating gripper...")
@@ -170,7 +76,7 @@ def print_position():
 
 def align_position():
     with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
-        robot.rtde_c.moveJ(BASE_EYAL, 1, 0.5)
+        robot.move_joint(BASE_EYAL, 1, 0.5)
     sys.exit(0)
 
 def get_grip():
@@ -185,8 +91,9 @@ def print_joints():
 
 
 
-class RobotHardware:
+class RobotHardware(AbstractRobotHardware):
     def __init__(self, robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, speed=0.1, acceleration=0.1, A1 = None, H8 = None):
+        super().__init__()
         self.robot_ip = robot_ip
         self.base_tcp_port = base_tcp_port
         self.speed = speed
@@ -196,18 +103,13 @@ class RobotHardware:
         self.gripper = None
         self.A1 = A1_
         self.H8 = H8_
-        self.step_right = [0, 0]
-        self.step_up = [0, 0]
         self.floor_height = 0
         self.sky_height = 0
         self.safe_height = 0.15
-        self.start_position = [0, 0, 0, 0, 0, 0]
-        self.positions = {}
         self.grip_height = {}
-        self.down_orientation = [0,0,0] 
         self.table_height = 0
-        self.storage = {}
 
+    @override
     def __enter__(self):
         self.rtde_c = RTDEControlInterface(self.robot_ip)
         self.rtde_r = RTDEReceiveInterface(self.robot_ip)
@@ -223,14 +125,6 @@ class RobotHardware:
             self.gripper.activate()
         return self
 
-    # return a position moved right and up by the given number of centimeters, can also use negative numbers to move left and down
-    # must before use the calibrate_board_positions function at least once to set the step_right and step_up values
-    def move_on_chessboard(self, current_pos, right=0, up=0):
-        position = current_pos.copy()
-        position[X] = position[X] + (self.step_right[X] / CELL_LENGTH) * right + (self.step_up[X] / CELL_LENGTH) * up
-        position[Y] = position[Y] + (self.step_right[Y] / CELL_LENGTH) * right + (self.step_up[Y] / CELL_LENGTH) * up
-        return position
-
     def calibrate_board_positions(self, a1=None, h8=None):
        
         if a1 is None or h8 is None:
@@ -240,10 +134,8 @@ class RobotHardware:
         dy = h8[Y] - a1[Y]
         h1 = [a1[X] + (dx + dy) / 2.0, a1[Y] + (dy - dx) / 2.0]
 
-        self.step_right[0] = (h1[X] - a1[X]) / 7.0
-        self.step_right[1] = (h1[Y] - a1[Y]) / 7.0
-        self.step_up[0] = -self.step_right[Y]
-        self.step_up[1] = self.step_right[X]
+        self.step_right = [(h1[X] - a1[X]) / 7.0, (h1[Y] - a1[Y]) / 7.0]
+        self.step_up = [-self.step_right[Y], self.step_right[X]]
 
         rad = math.atan2(h8[1] - a1[1], h8[0] - a1[0])
         #self.down_orientation = [0, np.pi, rad-np.pi/4] // backwards board
@@ -324,6 +216,8 @@ class RobotHardware:
                 # Save to storage dictionary (including floor height and downward orientation)
                 self.storage[storage_key] = target_xy[:2] + [self.floor_height] + self.down_orientation
         """
+
+    @override
     def __exit__(self, exc_type, exc_value, traceback):
         try:
             if self.rtde_c is not None:
@@ -346,201 +240,29 @@ class RobotHardware:
         except Exception:
             pass
 
-    def normalize_pos(self, pos):
-        if isinstance(pos, str):
-            # Check if the string is a board square ('e4'...)
-            if pos in self.positions:
-                return self.positions[pos]
-            # Check if the string is a storage location ('sP1'...)
-            elif pos in self.storage:
-                return self.storage[pos]
-            else:
-                raise ValueError(f"Position '{pos}' not found in board or storage dictionaries")
-            
-        if not isinstance(pos, Sequence):
-            raise Exception("expected a sequence")
-        if not isinstance(pos, list):
-            pos = list(map(float, pos))
-        if len(pos) == 3:
-            return pos + self.down_orientation
-        elif len(pos) == 6:
-            return pos
-        else:
-            raise Exception("bad length")
-
-
     @property
+    @override
     def pose(self):
         return self.rtde_r.getActualTCPPose()
 
-    # return a rotated version vector of curent position by tcp
-    def get_rotated_tcp_orientation(self, base_orientation = None, Rx=0, Ry=0, Rz=0):
-        if base_orientation is None:
-            base_orientation = self.pose
-        base_orientation = base_orientation[-3:] 
-        rot_base = Rotation.from_rotvec(base_orientation)
-        rot_local = Rotation.from_euler('xyz', [Rx, Ry, Rz], degrees=True)
-        new_rot = rot_base * rot_local
-        return  new_rot.as_rotvec().tolist()
-    
-    def calculate_target_pose(self, pose=None, x=None, y=None, z=None, rx=None, ry=None, rz=None, 
-                              orientation = None, dx=None, dy=None, dz=None, drx=None, dry=None, drz=None):
-        if pose is None:
-            pose = self.pose
-
-        # Handle orientation case
-        if orientation is not None:
-            # Check if any x, y, z are provided
-            other_params = any(v is not None for v in (rx, ry, rz, drx, dry, drz))
-            if other_params:
-                raise ValueError("Cannot mix orientation with x, y, z parameters")
-        
-        # Use unified modify_pose for all position/rotation parameters
-        target_pose = self.modify_pose(pose, x=x, y=y, z=z, rx=rx, ry=ry, rz=rz,
-                                        dx=dx, dy=dy, dz=dz, drx=drx, dry=dry, drz=drz)
-        
-        if orientation is not None:
-            target_pose[3:] = orientation
-
-        return target_pose
-
-    def move_to(self, pose=None, x=None, y=None, z=None, rx=None, ry=None, rz=None, orientation = None,
-                dx=None, dy=None, dz=None, drx=None, dry=None, drz=None, speed = None, acceleration = None):
-        """Move to a target pose. Accepts absolute, relative, or mixed arguments.
-        
-        Absolute parameters (x, y, z, rx, ry, rz) set the coordinate directly.
-        Relative parameters (dx, dy, dz, drx, dry, drz) add to the current/given pose.
-        Can also provide orientation directly or mix absolute and relative parameters.
-        """
-        if speed is None:
-            speed = self.speed
-        if acceleration is None:
-            acceleration = self.acceleration
-        target_pose = self.calculate_target_pose(pose=pose, x=x, y=y, z=z, rx=rx, ry=ry, rz=rz, orientation = orientation,
-                                                dx=dx, dy=dy, dz=dz, drx=drx, dry=dry, drz=drz)
+    @override
+    def move_raw(self, target_pose, speed, acceleration):
         self.rtde_c.moveL(target_pose, speed, acceleration)
-        return target_pose
 
-    def set_gripper(self, position=None, close_by=None, open_by=None, speed=60, force=0, wait = True):
-        if position is None and close_by is None and open_by is None:
-            raise Exception("expected position or close_by or open_by")
-        if position is None:
-            position = self.get_gripper()
-        if close_by is not None:
-            position += close_by
-        if open_by is not None:
-            position -= open_by
-        if wait == True:
+    @override
+    def move_joint(self, target_pose, speed, acceleration):
+        self.rtde_c.moveJ(target_pose, speed, acceleration)
+
+    @override
+    def set_gripper_raw(self, position, speed, force, wait):
+        if wait:
             self.gripper.move_and_wait_for_pos(position, speed, force)
         else:
             self.gripper.move(position, speed, force)
 
+    @override
     def get_gripper(self):
         return self.gripper.get_current_position()
-    @staticmethod
-    def modify_pose(pose, x=None, y=None, z=None, rx=None, ry=None, rz=None,
-                    dx=None, dy=None, dz=None, drx=None, dry=None, drz=None):
-        """Modify a pose with absolute and/or relative parameters.
-        
-        Absolute parameters (x, y, z, rx, ry, rz) set the coordinate directly.
-        Relative parameters (dx, dy, dz, drx, dry, drz) add to the coordinate.
-        If both absolute and relative are provided for the same coordinate, they are summed.
-        """
-        modified = pose.copy()
-        
-        # Process X coordinate (absolute and/or relative)
-        if x is not None or dx is not None:
-            value = pose[X]
-            if x is not None:
-                value = x
-            if dx is not None:
-                value += dx
-            modified[X] = value
-        
-        # Process Y coordinate (absolute and/or relative)
-        if y is not None or dy is not None:
-            value = pose[Y]
-            if y is not None:
-                value = y
-            if dy is not None:
-                value += dy
-            modified[Y] = value
-        
-        # Process Z coordinate (absolute and/or relative)
-        if z is not None or dz is not None:
-            value = pose[Z]
-            if z is not None:
-                value = z
-            if dz is not None:
-                value += dz
-            modified[Z] = value
-        
-        # Process RX rotation (absolute and/or relative)
-        if rx is not None or drx is not None:
-            value = pose[RX]
-            if rx is not None:
-                value = rx
-            if drx is not None:
-                value += drx
-            modified[RX] = value
-        
-        # Process RY rotation (absolute and/or relative)
-        if ry is not None or dry is not None:
-            value = pose[RY]
-            if ry is not None:
-                value = ry
-            if dry is not None:
-                value += dry
-            modified[RY] = value
-        
-        # Process RZ rotation (absolute and/or relative)
-        if rz is not None or drz is not None:
-            value = pose[RZ]
-            if rz is not None:
-                value = rz
-            if drz is not None:
-                value += drz
-            modified[RZ] = value
-        
-        return modified
-
-    ### I moved it to the right class, so can delete here ###
-    def mov_chess_piece(self, type: PieceType=None, start_pos=None, end_pos=None, speed=None, acceleration=None, rz_rotation_start=None, rz_rotation_end=None, move_to_start=True):
-        if speed is None:
-            speed = self.speed
-        if acceleration is None:
-            acceleration = self.acceleration
-        if self.pose[Z] < self.safe_height:
-            self.move_to(z=self.safe_height)
-
-        # update chess board locations
-        start_pos = self.normalize_pos(start_pos)
-        end_pos = self.normalize_pos(end_pos)
-        if rz_rotation_start is not None:
-            start_pos[3:6] = self.get_rotated_tcp_orientation(start_pos,Rz=rz_rotation_start)
-        if rz_rotation_end is not None:
-            end_pos[3:6] = self.get_rotated_tcp_orientation(end_pos,Rz=rz_rotation_end)
-
-        self.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET,wait=False) #  open the gripper
-
-        # move to first spot
-        self.move_to(start_pos, z=self.safe_height, speed=speed, acceleration=acceleration) 
-        self.move_to(z=self.grip_height[type])
-
-        self.set_gripper(CLOSED) # grip the piece
-
-        # move to end spot
-        self.move_to(start_pos, z=self.safe_height)
-        self.move_to(end_pos, z=self.safe_height, speed=speed, acceleration=acceleration)
-        self.move_to(z=self.grip_height[type] + GRIP_RELEASE_HEIGHT)
-        
-        #self.set_gripper(self.get_gripper() - GRIP_RELEASE_OFFSET) # release the piece
-        self.set_gripper(open_by=GRIP_RELEASE_OFFSET, speed=10) # release the piece
-
-        # return to start postion
-        self.move_to(z=self.safe_height)
-        if move_to_start:
-            self.move_to(self.start_position, z=self.sky_height, speed=speed, acceleration=acceleration)
 
     def move_smooth_path___experimental(self, steps, blend_radius=0.03, speed=None, acceleration=None):
         
