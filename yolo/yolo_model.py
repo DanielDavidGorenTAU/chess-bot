@@ -2,6 +2,9 @@ from ultralytics import YOLO
 import os
 from typing import Optional
 from ZED.cameralib import Camera
+import cv2
+import random
+from pathlib import Path
 
 BINARY = "binary"
 UNARY = "unary"
@@ -29,7 +32,7 @@ class YoloModel:
     Wrapper class for loading and running predictions with Ultralytics YOLO models.
     """
 
-    def __init__(self, model_name: str = BINARY, camera: Camera = None):
+    def __init__(self, model_name: str = BINARY, camera: Camera = None, save_regularly: bool = True):
         """
         Initializes the YoloModel wrapper.
 
@@ -41,10 +44,92 @@ class YoloModel:
         self.model_path: str = ""
         self.model: YOLO = None
         self.camera: Camera = camera 
+        self.save_regularly: bool = save_regularly
 
         self._ensure_directories()
         self.set_model(model_name)
+    def save_yolo_prediction_clean(self, result, image, output_path):
+        """
+        Saves YOLO prediction with only bounding boxes and a class legend.
 
+        Args:
+            result: YOLO result object (result[0])
+            image: Original image as numpy array (cv2 image)
+            output_path: Path where the image will be saved
+        """
+
+        img = image.copy()
+
+        colors = {}
+
+        def get_color(class_id):
+            if class_id not in colors:
+                colors[class_id] = (
+                    random.randint(0, 255),
+                    random.randint(0, 255),
+                    random.randint(0, 255)
+                )
+            return colors[class_id]
+
+        legend = []
+
+        for box in result.boxes:
+            cls_id = int(box.cls[0])
+            name = result.names[cls_id]
+
+            x1, y1, x2, y2 = map(int, box.xyxy[0])
+
+            color = get_color(cls_id)
+
+            # Draw bounding box only
+            cv2.rectangle(
+                img,
+                (x1, y1),
+                (x2, y2),
+                color,
+                3
+            )
+
+            if name not in [item[0] for item in legend]:
+                legend.append((name, color))
+
+        # Add legend at bottom
+        legend_height = 40 * len(legend)
+
+        canvas = cv2.copyMakeBorder(
+            img,
+            0,
+            legend_height,
+            0,
+            0,
+            cv2.BORDER_CONSTANT,
+            value=(30, 30, 30)
+        )
+
+        y = img.shape[0] + 30
+
+        for name, color in legend:
+            cv2.rectangle(
+                canvas,
+                (20, y - 20),
+                (50, y + 10),
+                color,
+                -1
+            )
+
+            cv2.putText(
+                canvas,
+                name,
+                (70, y),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.8,
+                (255, 255, 255),
+                2
+            )
+
+            y += 40
+
+        cv2.imwrite(str(output_path), canvas)
     def _ensure_directories(self) -> None:
         """Ensures that image and prediction output directories exist."""
         os.makedirs(PREDICTION_OUTPUT_DIR, exist_ok=True)
@@ -98,7 +183,10 @@ class YoloModel:
 
         # Save annotated image
         output_image = os.path.join(PREDICTION_OUTPUT_DIR, os.path.basename(image_path))
-        result.save(filename=output_image)
+        if not self.save_regularly:
+            self.save_yolo_prediction_clean(result, cv2.imread(image_path), output_image)
+        else:
+            result.save(filename=output_image)
         return txt_path  # Return the path to the saved coordinates file for further processing
     
         

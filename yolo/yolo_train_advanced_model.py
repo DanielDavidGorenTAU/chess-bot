@@ -11,7 +11,7 @@ def main():
     # Train the model. 
     # (Make sure to change "path/to/your/data.yaml" to your actual dataset file)
     model.train(
-        data="/home/checkmate/Documents/chess-bot/yolo/data.yaml", 
+        data="/home/checkmate/Documents/chess-bot/yolo/yaml_files/data.yaml", 
         epochs=100, 
         imgsz=800, 
         device=0,               # Change to "cuda" or 0 if you have an NVIDIA GPU
