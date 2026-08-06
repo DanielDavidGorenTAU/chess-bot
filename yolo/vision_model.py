@@ -18,14 +18,14 @@ class VisionModel(ABC):
 
 
 
-    def _resolve_image_path(self, image_path: Optional[str]) -> str:
+    def _resolve_image_path(self, image_path: Optional[str], output_dir: Optional[str]) -> str:
         """
         Shared camera fallback logic. Captures photo if image_path is None.
         """
         if image_path is None:
             if self.camera is None:
                 raise RuntimeError("No image path provided and camera is not configured.")
-            image_path = self.camera.take_photo(self.output_dir)
+            image_path = self.camera.take_photo(output_dir)
 
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"Image path does not exist: {image_path}")

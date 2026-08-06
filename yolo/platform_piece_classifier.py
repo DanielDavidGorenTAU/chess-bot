@@ -39,7 +39,7 @@ class YOLOPieceClassifier(PlatformPieceClassifier):
 
     def identify_piece(self, image_path: Optional[str] = None) -> ColoredPieceType:
 
-        image_path = self._resolve_image_path(image_path)
+        image_path = self._resolve_image_path(image_path, IMAGE_OUTPUT_DIR)
 
         #Run inference
         results = self.model.predict(source=image_path, conf=self.conf)

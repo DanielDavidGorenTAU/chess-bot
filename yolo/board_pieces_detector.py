@@ -2,9 +2,11 @@ from ultralytics import YOLO
 import os
 from typing import Optional
 from ZED.cameralib import Camera
+from .vision_model import VisionModel
 import cv2
 import random
 from pathlib import Path
+from common.utils import ensure_directories
 
 BINARY = "binary"
 UNARY = "unary"
@@ -20,34 +22,27 @@ MODEL_CONF = {
     ADVANCED: 0.25
 }
 
-PREDICTION_OUTPUT_DIR = "/home/checkmate/Documents/chess-bot/yolo/predictions"
-IMAGE_OUTPUT_DIR = "/home/checkmate/Documents/chess-bot/yolo/game_photos"
+PREDICTION_OUTPUT_DIR = "/home/checkmate/Documents/chess-bot/yolo/predictions_game"
+IMAGE_OUTPUT_DIR = "/home/checkmate/Documents/chess-bot/yolo/photos_game"
 
 
 
 
 
-class YoloModel:
+class BoardPiecesDetector(VisionModel):
     """
     Wrapper class for loading and running predictions with Ultralytics YOLO models.
     """
 
     def __init__(self, model_name: str = BINARY, camera: Camera = None, save_regularly: bool = True):
-        """
-        Initializes the YoloModel wrapper.
-
-        :param model_name: Name of the model to load (e.g., 'binary', 'unary', 'advanced').
-        :param output_dir: Directory where prediction results will be saved.
-        :param conf: Default confidence threshold for predictions (0.0 to 1.0).
-        """
-        self.conf: float = MODEL_CONF[BINARY]
+        super().__init__(camera=camera, conf=MODEL_CONF[BINARY], path_list=[IMAGE_OUTPUT_DIR, PREDICTION_OUTPUT_DIR])
         self.model_path: str = ""
         self.model: YOLO = None
         self.camera: Camera = camera 
         self.save_regularly: bool = save_regularly
 
-        self._ensure_directories()
         self.set_model(model_name)
+        
     def save_yolo_prediction_clean(self, result, image, output_path):
         """
         Saves YOLO prediction with only bounding boxes and a class legend.
@@ -130,10 +125,7 @@ class YoloModel:
             y += 40
 
         cv2.imwrite(str(output_path), canvas)
-    def _ensure_directories(self) -> None:
-        """Ensures that image and prediction output directories exist."""
-        os.makedirs(PREDICTION_OUTPUT_DIR, exist_ok=True)
-        os.makedirs(IMAGE_OUTPUT_DIR, exist_ok=True)
+
 
     def set_model(self, name: str):
         """
@@ -155,11 +147,8 @@ class YoloModel:
         """
         if self.model is None:
             raise RuntimeError("Model is not loaded. Ensure a valid model path is set.")
-        
-        if image_path is None:
-            if self.camera is None:
-                raise RuntimeError("No image path provided and camera is not configured.")
-            image_path = self.camera.take_photo(IMAGE_OUTPUT_DIR)
+
+        image_path = self._resolve_image_path(image_path, IMAGE_OUTPUT_DIR)
         
         results = self.model(image_path, conf=self.conf)
         result = results[0]

@@ -2,7 +2,7 @@ from main.config import AppConfig
 from game.game import Game
 from game.player import Player, HumanPlayer, RobotPlayer
 from yolo.human_interpreter import HumanMoveInterpreter
-from yolo.yolo_model import YoloModel
+from yolo.board_pieces_detector import BoardPiecesDetector
 from yolo.fen_translator import BinaryToFenTranslator  # or factory for translators
 from arm.playing_robot import *
 from ZED.cameralib import Camera
@@ -34,7 +34,7 @@ class GameFactory:
         """Assembles Vision + Translator pipeline."""
         print(f"[Factory] Assembling Vision Pipeline with model '{self.config.vision.model_name}'")
         
-        yolo_model = YoloModel(model_name=self.config.vision.model_name, camera=self.camera)
+        yolo_model = BoardPiecesDetector(model_name=self.config.vision.model_name, camera=self.camera)
         translator = BinaryToFenTranslator()
         
         return HumanMoveInterpreter(yolo_model=yolo_model, translator=translator)
