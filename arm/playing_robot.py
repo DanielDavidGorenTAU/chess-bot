@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 from typing import Optional
 from common.enums_and_dicts import *
 from .chessbot import *
+from main.config import AppConfig
+
 
 class PlayingRobot(ABC):
 
@@ -199,7 +201,12 @@ class PlayingArm(PlayingRobot):
 
     def capture(self, from_square: str, to_square: str, remove_square: str, moving_piece: PieceType, captured_piece: PieceType) -> bool:
         try:
-            self._execute_movement(captured_piece, remove_square, "storage", move_to_start=False) # remove
+            robot = self.robot_hardware
+            config = AppConfig.load("/home/checkmate/Documents/chess-bot/main/config.yaml")
+            human_color = config.game.get_color_for("human")
+            storage_pos = robot.put_in_storage_pos(captured_piece, human_color)
+
+            self._execute_movement(captured_piece, remove_square, storage_pos, move_to_start=False) # remove
             self._execute_movement(moving_piece, from_square, to_square)                          # move
             return True
         except Exception as e:
@@ -216,11 +223,22 @@ class PlayingArm(PlayingRobot):
             return False
 
     def upgrade(self, from_square: str, to_square: str, promoted_piece: PieceType = PieceType.QUEEN, captured_piece: Optional[PieceType] = None) -> bool:
-        try:  
+        try:
+            robot = self.robot_hardware
+            config = AppConfig.load("/home/checkmate/Documents/chess-bot/main/config.yaml")
+            
             if captured_piece is not None: 
-                self._execute_movement(captured_piece, to_square, "storage")                        # remove
-            self._execute_movement(PieceType.PAWN, from_square, "storage", move_to_start=False)     # remove
-            self._execute_movement(promoted_piece, "storage", to_square)                            # get
+                human_color = config.game.get_color_for("human")
+                storage_pos = robot.put_in_storage_pos(captured_piece, human_color)
+                self._execute_movement(captured_piece, to_square, storage_pos)                        # remove
+
+            robot_color = config.game.get_color_for("robot")
+
+            storage_pos = robot.put_in_storage_pos(captured_piece, robot_color)
+            self._execute_movement(PieceType.PAWN, from_square, storage_pos, move_to_start=False)     # remove
+
+            storage_pos = robot.put_in_storage_pos(promoted_piece, robot_color)
+            self._execute_movement(promoted_piece, storage_pos, to_square)                            # get
             return True
         except Exception as e:
             print(f"[Robot] Upgrade failed: {type(e).__name__}: {e}")

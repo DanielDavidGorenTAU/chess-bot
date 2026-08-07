@@ -5,17 +5,8 @@ import time
 import sys
 from collections.abc import Sequence
 from typing import override
-from .measurements import *
-from .abstract_robot_hardware import AbstractRobotHardware
-
-# Ensure the project root is on sys.path when running this module directly from arm/
-#ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-#if ROOT_DIR not in sys.path:
-#    sys.path.insert(0, ROOT_DIR)
-
 from rtde_control import RTDEControlInterface
 from rtde_receive import RTDEReceiveInterface
-from .robotiq_gripper import RobotiqGripper
 import numpy as np
 from scipy.spatial.transform import Rotation
 import cv2
@@ -23,6 +14,27 @@ import pyzed.sl as sl
 import math
 from common.enums_and_dicts import *
 from common.utils import *
+from typing import Optional
+from main.config import AppConfig
+
+if __name__ == "__main__":
+    ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    if ROOT_DIR not in sys.path:
+        sys.path.insert(0, ROOT_DIR)
+        
+        from robotiq_gripper import RobotiqGripper
+        from measurements import *
+        from abstract_robot_hardware import AbstractRobotHardware
+
+    else:  
+        from .robotiq_gripper import RobotiqGripper
+        from .measurements import *
+        from .abstract_robot_hardware import AbstractRobotHardware
+        
+
+
+
 
 
 clicked_point = None
@@ -89,10 +101,40 @@ def print_joints():
         print(list(robot.rtde_r.getActualQ()))
     sys.exit(0)
 
+def convert_fen_char_to_type_and_color(c: str):
+    color = 'white' if c.isupper() else 'black'
+    if c.islower() == 'b':
+        return PieceType.BISHOP, color
+    if c.islower() == 'k':
+        return PieceType.KING, color
+    if c.islower() == 'n':
+        return PieceType.KNIGHT, color
+    if c.islower() == 'p':
+        return PieceType.PAWN, color
+    if c.islower() == 'q':
+        return PieceType.QUEEN, color
+    if c.islower() == 'r':
+        return PieceType.ROOK, color
 
+def convert_type_and_color_to_fen_char(type: PieceType, color: str):
+    char_map = {
+        PieceType.BISHOP: 'b',
+        PieceType.KING: 'k',
+        PieceType.KNIGHT: 'n',
+        PieceType.PAWN: 'p',
+        PieceType.QUEEN: 'q',
+        PieceType.ROOK: 'r'
+    }
+    
+    char = char_map.get(type)
+    
+    if not char:
+        raise ValueError(f"Unknown piece type: {type}")
+        
+    return char.upper() if color.lower() == 'white' else char
 
 class RobotHardware(AbstractRobotHardware):
-    def __init__(self, robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, speed=0.1, acceleration=0.1, A1 = None, H8 = None):
+    def __init__(self, robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, speed=0.5, acceleration=0.5, A1 = A1_, H8 = H8_):
         super().__init__()
         self.robot_ip = robot_ip
         self.base_tcp_port = base_tcp_port
@@ -101,13 +143,14 @@ class RobotHardware(AbstractRobotHardware):
         self.rtde_c = None
         self.rtde_r = None
         self.gripper = None
-        self.A1 = A1_
-        self.H8 = H8_
+        self.A1 = A1
+        self.H8 = H8
         self.floor_height = 0
         self.sky_height = 0
         self.safe_height = 0.15
         self.grip_height = {}
         self.table_height = 0
+        self.storage_state = {}
 
     @override
     def __enter__(self):
@@ -170,52 +213,15 @@ class RobotHardware(AbstractRobotHardware):
         #global cube_pose
         #cube_pose = RobotHardware.modify_pose(self.positions["a8"], dx=-0.02, dy=-0.09, dz=0.09)
 
-        #storage_start = self.move_on_chessboard(self.positions['a1'], right=-0.4*CELL_LENGTH, up=-2.5*CELL_LENGTH)
-        storage_start = self.move_on_chessboard(self.positions['h8'], right=0.4*CELL_LENGTH, up=2.5*CELL_LENGTH)
-        for type in "PNBRQKpnbrqk":
-            for i in range(1, 9):
-                self.positions[f's{type}{i}'] = storage_start
-            
-        #for row in range(1, 5):
-        #    tmp_pos = 
-        #    for col in range(1,9):
-        #        if row == 1:
-        #            self.storage[f"sr1"] = 
+        self.create_physical_stroge_positions()    
+        
+        
+        
 
 
 
 
-        """
-        # Storage starting points (starting near row 1 and moving towards the player)
-        black_storage_start = self.move_on_chessboard(self.positions['a1'][:2], right=-2*CELL_LENGTH, up=-1.5*CELL_LENGTH)
-        white_storage_start = self.move_on_chessboard(self.positions['h1'][:2], right=2*CELL_LENGTH, up=-1.5*CELL_LENGTH)
 
-        # Iterate over all 12 piece types 
-        for piece_int, piece_char in INT_TO_FEN.items():
-            is_white = piece_int >= 6
-            start_pos = white_storage_start if is_white else black_storage_start
-            
-            # Separate column offset for each piece type (0 to 5)
-            type_column_offset = (piece_int % 6) * CELL_LENGTH
-            
-            # Max copies per piece type that can leave the board (8 to be safe)
-            for cell in range(1, 9):
-                storage_key = f"s{piece_char}{cell}"
-                
-                # Move NEGATIVE along the column (getting closer to player)
-                piece_row_offset = -(cell - 1) * CELL_LENGTH
-                
-                # Calculate final xy position
-                direction = 1 if is_white else -1
-                target_xy = self.move_on_chessboard(
-                    start_pos, 
-                    right=type_column_offset * direction, 
-                    up=piece_row_offset
-                )
-                
-                # Save to storage dictionary (including floor height and downward orientation)
-                self.storage[storage_key] = target_xy[:2] + [self.floor_height] + self.down_orientation
-        """
 
     @override
     def __exit__(self, exc_type, exc_value, traceback):
@@ -264,6 +270,45 @@ class RobotHardware(AbstractRobotHardware):
     def get_gripper(self):
         return self.gripper.get_current_position()
 
+    def create_physical_stroge_positions(self, storage_start = None):
+        if storage_start == None:
+            #storage_start = self.move_on_chessboard(self.positions['a1'], right=-0.4*CELL_LENGTH, up=-2.5*CELL_LENGTH)
+            storage_start = self.move_on_chessboard(self.positions['h8'], right=0.4*CELL_LENGTH, up=2.5*CELL_LENGTH)
+
+        self.positions[f'sP1'] = storage_start # tmp fix TODO delete this
+
+        tmp_pos = storage_start
+        for i in range(1,5):
+        
+            if i == 1: # add special black pieces
+                for type in "rnbqk":
+                    self.positions[f's{type}1'] = [tmp_pos[X] ,tmp_pos[Y], self.table_height] + self.down_orientation
+                    tmp_pos = self.move_on_chessboard(tmp_pos, right=-CELL_LENGTH*(5.3/5), up=0)
+                for type in "bnr":
+                    self.positions[f's{type}2'] = [tmp_pos[X] ,tmp_pos[Y], self.table_height] + self.down_orientation
+                    tmp_pos = self.move_on_chessboard(tmp_pos, right=-CELL_LENGTH*(5.3/5), up=0)
+
+            elif i == 4: # add special white pieces
+                for type in "RNBQK":
+                    self.positions[f's{type}1'] = [tmp_pos[X] ,tmp_pos[Y], self.table_height] + self.down_orientation
+                    tmp_pos = self.move_on_chessboard(tmp_pos, right=-CELL_LENGTH*(5.3/5), up=0)
+                for type in "BNR":
+                    self.positions[f's{type}2'] = [tmp_pos[X] ,tmp_pos[Y], self.table_height] + self.down_orientation
+                    tmp_pos = self.move_on_chessboard(tmp_pos, right=-CELL_LENGTH*(5.3/5), up=0)
+
+            elif i == 2: # add regular black pieces
+                for counter in range(1,9):
+                    self.positions[f'sp{counter}'] = [tmp_pos[X] ,tmp_pos[Y], self.table_height] + self.down_orientation
+                    tmp_pos = self.move_on_chessboard(tmp_pos, right=-CELL_LENGTH*(5.3/5), up=0)
+
+            else: # i == 3 # add regular white pieces
+                for counter in range(1,9):
+                    self.positions[f'sP{counter}'] = [tmp_pos[X] ,tmp_pos[Y], self.table_height] + self.down_orientation
+                    tmp_pos = self.move_on_chessboard(tmp_pos, right=-CELL_LENGTH*(5.3/5), up=0)
+
+            # next line        
+            tmp_pos = self.move_on_chessboard(tmp_pos, right=8*CELL_LENGTH*(5.3/5), up=1*CELL_LENGTH)
+            
     def move_smooth_path___experimental(self, steps, blend_radius=0.03, speed=None, acceleration=None):
         
         if speed is None:

@@ -1,7 +1,7 @@
 import json
 import os
 from dataclasses import dataclass, field
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 
 @dataclass
@@ -34,6 +34,17 @@ class GameSetupConfig:
     white_name: str = "Human Player"
     black_name: str = "Robot Player"
     initial_fen: str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+
+    def get_color_for(self, player_type: str = "robot") -> Optional[str]:
+        """
+        Queries which color the specified player type is playing as.
+        Returns 'white', 'black', or None if not found.
+        """
+        if self.white_player.lower() == player_type.lower():
+            return "white"
+        elif self.black_player.lower() == player_type.lower():
+            return "black"
+        return None
 
 
 @dataclass

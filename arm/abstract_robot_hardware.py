@@ -77,7 +77,7 @@ class AbstractRobotHardware(ABC):
 
     def normalize_pos(self, pos):
         if isinstance(pos, str):
-            # Check if the string is a board square ('e4'...)
+            # Check if the string is a board square ('e4', sP3, ...)
             if pos in self.positions:
                 return self.positions[pos]
             else:
