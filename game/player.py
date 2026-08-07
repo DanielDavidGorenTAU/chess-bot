@@ -82,7 +82,7 @@ class RobotPlayer(Player):
         old_counts = Counter(c for c in old_board if c.isalpha())
         new_counts = Counter(c for c in new_board if c.isalpha())
 
-        # בדיקה 1: כלים שנעלמו מהלוח (נאכלו על ידי האדם -> הולכים לאחסון)
+        # checking for missing pieces on board to update
         for char, old_count in old_counts.items():
             new_count = new_counts.get(char, 0)
             if old_count > new_count:
@@ -92,7 +92,7 @@ class RobotPlayer(Player):
                     self.robot.put_in_storage_pos(piece_type, color)
                     print(f"[Robot Memory] Human captured {color} {piece_type.name}. Storage updated.")
 
-        # בדיקה 2: כלים שהופיעו בלוח (האדם הכתיר רגלי למלכה -> יוצאים מהאחסון)
+        # checking for new pieces on board to update
         for char, new_count in new_counts.items():
             old_count = old_counts.get(char, 0)
             if new_count > old_count:
