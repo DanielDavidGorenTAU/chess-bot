@@ -4,8 +4,8 @@
     <View>
       <Header value="1. Select Piece State &amp; Draw Box" size="4"/>
       <RectangleLabels name="piece_class" toName="img">
-        <Label value="Standing" background="#007BFF"/>
-        <Label value="Lying" background="#FFC107"/>
+        <Label value="Lying" background="#007BFF"/>
+        <Label value="Standing" background="#FFC107"/>
       </RectangleLabels>
     </View>
 
