@@ -101,37 +101,9 @@ def print_joints():
         print(list(robot.rtde_r.getActualQ()))
     sys.exit(0)
 
-def convert_fen_char_to_type_and_color(c: str):
-    color = 'white' if c.isupper() else 'black'
-    if c.islower() == 'b':
-        return PieceType.BISHOP, color
-    if c.islower() == 'k':
-        return PieceType.KING, color
-    if c.islower() == 'n':
-        return PieceType.KNIGHT, color
-    if c.islower() == 'p':
-        return PieceType.PAWN, color
-    if c.islower() == 'q':
-        return PieceType.QUEEN, color
-    if c.islower() == 'r':
-        return PieceType.ROOK, color
 
-def convert_type_and_color_to_fen_char(type: PieceType, color: str):
-    char_map = {
-        PieceType.BISHOP: 'b',
-        PieceType.KING: 'k',
-        PieceType.KNIGHT: 'n',
-        PieceType.PAWN: 'p',
-        PieceType.QUEEN: 'q',
-        PieceType.ROOK: 'r'
-    }
-    
-    char = char_map.get(type)
-    
-    if not char:
-        raise ValueError(f"Unknown piece type: {type}")
-        
-    return char.upper() if color.lower() == 'white' else char
+
+
 
 class RobotHardware(AbstractRobotHardware):
     def __init__(self, robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, speed=0.5, acceleration=0.5, A1 = A1_, H8 = H8_):
@@ -213,7 +185,7 @@ class RobotHardware(AbstractRobotHardware):
         #global cube_pose
         #cube_pose = RobotHardware.modify_pose(self.positions["a8"], dx=-0.02, dy=-0.09, dz=0.09)
 
-        self.create_physical_stroge_positions()    
+        self.create_physical_storage_positions()    
         
         
         
@@ -270,7 +242,7 @@ class RobotHardware(AbstractRobotHardware):
     def get_gripper(self):
         return self.gripper.get_current_position()
 
-    def create_physical_stroge_positions(self, storage_start = None):
+    def create_physical_storage_positions(self, storage_start = None):
         if storage_start == None:
             #storage_start = self.move_on_chessboard(self.positions['a1'], right=-0.4*CELL_LENGTH, up=-2.5*CELL_LENGTH)
             storage_start = self.move_on_chessboard(self.positions['h8'], right=0.4*CELL_LENGTH, up=2.5*CELL_LENGTH)

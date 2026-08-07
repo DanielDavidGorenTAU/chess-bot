@@ -140,3 +140,35 @@ def is_close(a: float | Vector, b: float | Vector, epsilon: float = 0.001) -> fl
     if isinstance(a, Sequence) and isinstance(b, Sequence):
         return (distance(a, b) < epsilon)
     raise TypeError("bad type for a and b")
+
+def convert_type_and_color_to_fen_char(type: PieceType, color: str):
+    char_map = {
+        PieceType.BISHOP: 'b',
+        PieceType.KING: 'k',
+        PieceType.KNIGHT: 'n',
+        PieceType.PAWN: 'p',
+        PieceType.QUEEN: 'q',
+        PieceType.ROOK: 'r'
+    }
+    
+    char = char_map.get(type)
+    
+    if not char:
+        raise ValueError(f"Unknown piece type: {type}")
+        
+    return char.upper() if color.lower() == 'white' else char
+
+def convert_fen_char_to_type_and_color(c: str):
+    color = 'white' if c.isupper() else 'black'
+    if c.islower() == 'b':
+        return PieceType.BISHOP, color
+    if c.islower() == 'k':
+        return PieceType.KING, color
+    if c.islower() == 'n':
+        return PieceType.KNIGHT, color
+    if c.islower() == 'p':
+        return PieceType.PAWN, color
+    if c.islower() == 'q':
+        return PieceType.QUEEN, color
+    if c.islower() == 'r':
+        return PieceType.ROOK, color

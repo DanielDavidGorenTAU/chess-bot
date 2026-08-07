@@ -3,7 +3,7 @@ from typing import Optional
 from common.enums_and_dicts import *
 from .chessbot import *
 from main.config import AppConfig
-
+from common.utils import convert_type_and_color_to_fen_char
 
 class PlayingRobot(ABC):
 
