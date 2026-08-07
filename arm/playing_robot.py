@@ -43,7 +43,46 @@ class PlayingArm(PlayingRobot):
 
     def __init__(self, robot_hardware: RobotHardware):
         self.robot_hardware = robot_hardware
+        self.storage_state =  {
+            'sP': 0, 'sp': 0,   
+            'sR': 0, 'sr': 0,
+            'sN': 0, 'sn': 0,   
+            'sB': 0, 'sb': 0,
+            'sQ': 0, 'sq': 0,
+            'sK': 0, 'sk': 0
+        }
 
+        config = AppConfig.load("/home/checkmate/Documents/chess-bot/main/config.yaml")
+        self.human_color = config.game.get_color_for("human")
+        self.robot_color = config.game.get_color_for("robot")
+
+    # return storage location to store piece
+    def put_in_storage_pos(self, type: PieceType=None, color: Optional[str]=None):
+        
+        if type == None or color == None:
+            raise Exception("Error pieceType or color for storage")
+        
+        fen_char = convert_type_and_color_to_fen_char(type, color)
+
+        self.storage_state[f"s{fen_char}"] += 1 # update storage state
+        index = self.storage_state[f"s{fen_char}"]
+
+        return f"s{fen_char}{index}"
+        
+    # return storage location to get piece
+    def remove_from_storage_pos(self, type: PieceType=None, color: Optional[str]=None):
+        
+        if type == None or color == None:
+            raise Exception("Error pieceType or color for storage")
+        
+        fen_char = convert_type_and_color_to_fen_char(type, color)
+
+        index = self.storage_state[f"s{fen_char}"]
+        if index <= 0:
+            raise Exception(f"No {fen_char} in storage to remove!")
+        self.storage_state[f"s{fen_char}"] -= 1 # update storage state
+
+        return f"s{fen_char}{index}"
 
     def _move_piece(self, type=None, start_pos=None, end_pos=None, speed=None, acceleration=None, rz_rotation_start=None, rz_rotation_end=None, move_to_start=True):
         """
@@ -180,13 +219,11 @@ class PlayingArm(PlayingRobot):
         if start_on_board is True and end_on_board is True:                             # from square -> square
             self._move_piece(piece, start_pos, end_pos, move_to_start=move_to_start)
         elif start_on_board is True and end_on_board is False:                          # from square -> storage
-            # // TODO alocate free sapce to drop for end_pos
             self._remove_piece(piece, start_pos, end_pos,move_to_start=move_to_start)
         elif start_on_board is False and end_on_board is True:                          # from storage -> square
-            # // TODO get space to take from for start_pos
             self._bring_on_board(piece, end_pos, start_pos, move_to_start=move_to_start)
         else:
-            raise ValueError("Invalid square/borad coordinations provided")
+            raise Exception("Invalid square/borad coordinations provided")
 
 
 
@@ -201,11 +238,7 @@ class PlayingArm(PlayingRobot):
 
     def capture(self, from_square: str, to_square: str, remove_square: str, moving_piece: PieceType, captured_piece: PieceType) -> bool:
         try:
-            robot = self.robot_hardware
-            config = AppConfig.load("/home/checkmate/Documents/chess-bot/main/config.yaml")
-            human_color = config.game.get_color_for("human")
-            storage_pos = robot.put_in_storage_pos(captured_piece, human_color)
-
+            storage_pos = self.put_in_storage_pos(captured_piece, self.human_color)
             self._execute_movement(captured_piece, remove_square, storage_pos, move_to_start=False) # remove
             self._execute_movement(moving_piece, from_square, to_square)                          # move
             return True
@@ -224,20 +257,12 @@ class PlayingArm(PlayingRobot):
 
     def upgrade(self, from_square: str, to_square: str, promoted_piece: PieceType = PieceType.QUEEN, captured_piece: Optional[PieceType] = None) -> bool:
         try:
-            robot = self.robot_hardware
-            config = AppConfig.load("/home/checkmate/Documents/chess-bot/main/config.yaml")
-            
             if captured_piece is not None: 
-                human_color = config.game.get_color_for("human")
-                storage_pos = robot.put_in_storage_pos(captured_piece, human_color)
+                storage_pos = self.put_in_storage_pos(captured_piece, self.human_color)
                 self._execute_movement(captured_piece, to_square, storage_pos)                        # remove
-
-            robot_color = config.game.get_color_for("robot")
-
-            storage_pos = robot.put_in_storage_pos(captured_piece, robot_color)
+            storage_pos = self.put_in_storage_pos(PieceType.PAWN, self.robot_color)
             self._execute_movement(PieceType.PAWN, from_square, storage_pos, move_to_start=False)     # remove
-
-            storage_pos = robot.put_in_storage_pos(promoted_piece, robot_color)
+            storage_pos = self.remove_from_storage_pos(promoted_piece, self.robot_color)
             self._execute_movement(promoted_piece, storage_pos, to_square)                            # get
             return True
         except Exception as e:
