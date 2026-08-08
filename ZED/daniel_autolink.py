@@ -79,7 +79,7 @@ for record in data:
                     should_repeat = True
 
         if len(unlinked) != 0:
-            print(f"Warning: ambiguous relations in {record["data"]["image"]} - couldn't infer automatically")
+            print(f"Warning: {len(unlinked)} ambiguous relations in {record["data"]["image"]} - couldn't infer automatically")
 
         relations_needed = [
             {
