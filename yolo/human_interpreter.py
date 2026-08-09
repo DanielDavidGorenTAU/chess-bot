@@ -1,7 +1,7 @@
 from typing import Optional
 from .board_pieces_detector import BoardPiecesDetector
 from .fen_translator import Translator, BinaryToFenTranslator
-from arm import StorageManager
+from arm.StorageManager import StorageManager
 from common.utils import convert_fen_char_to_type_and_color
 from collections import Counter
 

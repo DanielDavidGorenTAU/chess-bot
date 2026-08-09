@@ -6,7 +6,7 @@ from .vision_model import VisionModel
 import cv2
 import random
 from pathlib import Path
-from common.utils import ensure_directories
+#from common.utils import ensure_directories
 
 BINARY = "binary"
 UNARY = "unary"

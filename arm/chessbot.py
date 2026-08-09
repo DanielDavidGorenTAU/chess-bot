@@ -3,8 +3,14 @@
 import os
 import time
 import sys
+
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
 from collections.abc import Sequence
-from typing import override
+from typing_extensions import override
 from rtde_control import RTDEControlInterface
 from rtde_receive import RTDEReceiveInterface
 import numpy as np
@@ -17,20 +23,24 @@ from common.utils import *
 from typing import Optional
 from main.config import AppConfig
 
-if __name__ == "__main__":
-    ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+from arm.robotiq_gripper import RobotiqGripper
+from arm.measurements import *
+from arm.abstract_robot_hardware import AbstractRobotHardware
 
-    if ROOT_DIR not in sys.path:
-        sys.path.insert(0, ROOT_DIR)
+#if __name__ == "__main__":
+#    ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+#    if ROOT_DIR not in sys.path:
+#        sys.path.insert(0, ROOT_DIR)
         
-        from robotiq_gripper import RobotiqGripper
-        from measurements import *
-        from abstract_robot_hardware import AbstractRobotHardware
+#        from robotiq_gripper import RobotiqGripper
+#        from measurements import *
+#        from abstract_robot_hardware import AbstractRobotHardware
 
-    else:  
-        from .robotiq_gripper import RobotiqGripper
-        from .measurements import *
-        from .abstract_robot_hardware import AbstractRobotHardware
+#    else:  
+#        from .robotiq_gripper import RobotiqGripper
+#        from .measurements import *
+#        from .abstract_robot_hardware import AbstractRobotHardware
         
 
 
@@ -247,7 +257,8 @@ class RobotHardware(AbstractRobotHardware):
             #storage_start = self.move_on_chessboard(self.positions['a1'], right=-0.4*CELL_LENGTH, up=-2.5*CELL_LENGTH)
             storage_start = self.move_on_chessboard(self.positions['h8'], right=0.4*CELL_LENGTH, up=2.5*CELL_LENGTH)
 
-        self.positions[f'sP1'] = storage_start # tmp fix TODO delete this
+        STORAGE_WIDTH = 5.3
+        STORAGE_HEIGHT = 5
 
         tmp_pos = storage_start
         for i in range(1,5):
@@ -255,31 +266,31 @@ class RobotHardware(AbstractRobotHardware):
             if i == 1: # add special black pieces
                 for type in "rnbqk":
                     self.positions[f's{type}1'] = [tmp_pos[X] ,tmp_pos[Y], self.table_height] + self.down_orientation
-                    tmp_pos = self.move_on_chessboard(tmp_pos, right=-CELL_LENGTH*(5.3/5), up=0)
+                    tmp_pos = self.move_on_chessboard(tmp_pos, right=-STORAGE_WIDTH, up=0)
                 for type in "bnr":
                     self.positions[f's{type}2'] = [tmp_pos[X] ,tmp_pos[Y], self.table_height] + self.down_orientation
-                    tmp_pos = self.move_on_chessboard(tmp_pos, right=-CELL_LENGTH*(5.3/5), up=0)
+                    tmp_pos = self.move_on_chessboard(tmp_pos, right=-STORAGE_WIDTH, up=0)
 
             elif i == 4: # add special white pieces
                 for type in "RNBQK":
                     self.positions[f's{type}1'] = [tmp_pos[X] ,tmp_pos[Y], self.table_height] + self.down_orientation
-                    tmp_pos = self.move_on_chessboard(tmp_pos, right=-CELL_LENGTH*(5.3/5), up=0)
+                    tmp_pos = self.move_on_chessboard(tmp_pos, right=-STORAGE_WIDTH, up=0)
                 for type in "BNR":
                     self.positions[f's{type}2'] = [tmp_pos[X] ,tmp_pos[Y], self.table_height] + self.down_orientation
-                    tmp_pos = self.move_on_chessboard(tmp_pos, right=-CELL_LENGTH*(5.3/5), up=0)
+                    tmp_pos = self.move_on_chessboard(tmp_pos, right=-STORAGE_WIDTH, up=0)
 
             elif i == 2: # add regular black pieces
                 for counter in range(1,9):
                     self.positions[f'sp{counter}'] = [tmp_pos[X] ,tmp_pos[Y], self.table_height] + self.down_orientation
-                    tmp_pos = self.move_on_chessboard(tmp_pos, right=-CELL_LENGTH*(5.3/5), up=0)
+                    tmp_pos = self.move_on_chessboard(tmp_pos, right=-STORAGE_WIDTH, up=0)
 
             else: # i == 3 # add regular white pieces
                 for counter in range(1,9):
                     self.positions[f'sP{counter}'] = [tmp_pos[X] ,tmp_pos[Y], self.table_height] + self.down_orientation
-                    tmp_pos = self.move_on_chessboard(tmp_pos, right=-CELL_LENGTH*(5.3/5), up=0)
+                    tmp_pos = self.move_on_chessboard(tmp_pos, right=-STORAGE_WIDTH, up=0)
 
             # next line        
-            tmp_pos = self.move_on_chessboard(tmp_pos, right=8*CELL_LENGTH*(5.3/5), up=1*CELL_LENGTH)
+            tmp_pos = self.move_on_chessboard(tmp_pos, right=8*STORAGE_WIDTH, up=1*STORAGE_HEIGHT)
             
     def move_smooth_path___experimental(self, steps, blend_radius=0.03, speed=None, acceleration=None):
         
@@ -703,7 +714,7 @@ def main():
         #robot.rtde_c.moveJ(BASE_URI, 1, 0.5)
         #robot.move_to(robot.start_position, z=robot.sky_height)
         
-        #robot.move_to(z=robot.sky_height)
+        robot.move_to(robot.positions['a1'],z=robot.floor_height + 0.0)
         #robot.move_to(robot.move_on_chessboard(robot.positions['a1'], right=-0.4*CELL_LENGTH, up=-2.5*CELL_LENGTH))
         
         

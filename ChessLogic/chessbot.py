@@ -171,7 +171,8 @@ def main():
     board = configs["board"]
 
     board = chess.Board(board.fen())
-    engine = chess.engine.SimpleEngine.popen_uci("./stockfish/stockfish-ubuntu-x86-64-avx2")
+    #engine = chess.engine.SimpleEngine.popen_uci("./stockfish/stockfish-ubuntu-x86-64-avx2")
+    engine = chess.engine.SimpleEngine.popen_uci("/usr/games/stockfish") # TODO check for permenant path in linux
 
     engine.configure({
     "UCI_LimitStrength": True,

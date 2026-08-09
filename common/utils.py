@@ -160,15 +160,15 @@ def convert_type_and_color_to_fen_char(type: PieceType, color: str):
 
 def convert_fen_char_to_type_and_color(c: str):
     color = 'white' if c.isupper() else 'black'
-    if c.islower() == 'b':
+    if c.lower() == 'b':
         return PieceType.BISHOP, color
-    if c.islower() == 'k':
+    if c.lower() == 'k':
         return PieceType.KING, color
-    if c.islower() == 'n':
+    if c.lower() == 'n':
         return PieceType.KNIGHT, color
-    if c.islower() == 'p':
+    if c.lower() == 'p':
         return PieceType.PAWN, color
-    if c.islower() == 'q':
+    if c.lower() == 'q':
         return PieceType.QUEEN, color
-    if c.islower() == 'r':
+    if c.lower() == 'r':
         return PieceType.ROOK, color

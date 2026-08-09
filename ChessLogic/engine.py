@@ -9,6 +9,7 @@ ENGINE_PATH = (
     / "stockfish"
     / "stockfish-ubuntu-x86-64-avx2"
 )
+ENGINE_PATH = "/usr/games/stockfish" # TODO check for permenant path in linux
 
 class ChessEngine:
     def choose_move(self, fen: str, engine_path=ENGINE_PATH) -> str:
@@ -24,6 +25,12 @@ class ChessEngine:
 
         # Open the engine, find the move, and safely close the engine
         with chess.engine.SimpleEngine.popen_uci(engine_path) as engine:
+            # --- -------------------------
+            print("FEN sent to Stockfish:", board.fen())
+            if not board.is_valid():
+                print("WARNING: The board is logically invalid!")
+                print("Reason:", board.status())
+            # -----------------------------
             result = engine.play(board, chess.engine.Limit(time=0.1))
             if result.move:
                 return result.move.uci()
