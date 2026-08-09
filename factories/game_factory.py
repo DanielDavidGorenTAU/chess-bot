@@ -63,6 +63,7 @@ class GameFactory:
             player_type=self.config.game.black_player, 
             name=self.config.game.black_name
         )
+        storage = StorageManager()
         print(self.config.game.initial_fen)
         return Game(
             white_player=white_player,
