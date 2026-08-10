@@ -6,10 +6,9 @@ class LabelingQualityError(Exception):
 
 class LabelingQualityChecker:
     def __init__(self, allow_orphans: bool = False):
-        # We only need to check for orphans now. 
-        # Out-of-bounds is no longer an "error" because spatial logic 
-        # is actually what determines ownership when no manual relation exists.
+        # We check for orphans and keypoint completeness per bounding box.
         self.allow_orphans = allow_orphans
+        self.required_keypoints = {"head", "base"}
 
     def check_file(self, file_path: str):
         if not os.path.exists(file_path):
@@ -20,24 +19,37 @@ class LabelingQualityChecker:
 
         total_errors = 0
         report = []
+        total_images = len(tasks)
+
+        print("--- Starting Label Quality Check ---\n")
 
         for task_idx, task in enumerate(tasks):
             task_id = task.get("id", f"Task_{task_idx}")
             image_name = task.get("data", {}).get("image", "Unknown Image")
 
+            image_rect_count = 0
+
             for ann_idx, annotation in enumerate(task.get("annotations", [])):
-                errors = self._inspect_annotation_logic(annotation, task_id, image_name)
+                errors, rect_count = self._inspect_annotation_logic(annotation, task_id, image_name)
+                image_rect_count += rect_count
                 if errors:
                     total_errors += len(errors)
                     report.extend(errors)
 
+            # Print rectangle count for the current image
+            print(f"Image [{image_name}]: {image_rect_count} rectangle(s) found.")
+
+        # Print total images processed
+        print(f"\nTotal images processed: {total_images}")
+        print("------------------------------------\n")
+
         if total_errors > 0:
-            error_msg = f"\nFound {total_errors} labeling logic error(s):\n" + "\n".join(f"- {e}" for e in report)
+            error_msg = f"Found {total_errors} labeling logic error(s):\n" + "\n".join(f"- {e}" for e in report)
             raise LabelingQualityError(error_msg)
         
         print("All labeling logic checks passed successfully! No annotation errors found.")
 
-    def _inspect_annotation_logic(self, annotation: dict, task_id, image_name) -> list:
+    def _inspect_annotation_logic(self, annotation: dict, task_id, image_name) -> tuple[list, int]:
         errors = []
         results = annotation.get("result", [])
 
@@ -106,19 +118,22 @@ class LabelingQualityChecker:
                             
                 final_owners[kp_id] = spatial_parents
 
-            # Map the resulting owner(s) to track duplicate labels later
-            kp_labels = kp_region.get("value", {}).get("keypointlabels", ["Unknown"])
+            # Map the resulting owner(s) to track labels per box (normalized to lowercase)
+            kp_raw_labels = kp_region.get("value", {}).get("keypointlabels", ["unknown"])
+            kp_labels = [label.strip().lower() for label in kp_raw_labels]
+            
             for owner_id in final_owners[kp_id]:
                 parent_keypoint_labels.setdefault(owner_id, []).extend(kp_labels)
 
         # ---------------------------------------------------------
         # 4. Run Quality Checks on the Final Ownership Structure
         # ---------------------------------------------------------
+        
+        # --- A. KEYPOINT-LEVEL CHECKS ---
         for kp_id, owners in final_owners.items():
             label_str = keypoints[kp_id].get("value", {}).get("keypointlabels", ["Unknown"])[0]
 
             # MULTI-OWNER ERROR
-            # (Happens if a point is manually related to 2 boxes, OR spatially falls inside 2 overlapping boxes)
             if len(owners) > 1:
                 errors.append(
                     f"[{image_name}] MULTI-OWNER ERROR: Keypoint '{label_str}' (ID: {kp_id}) "
@@ -126,15 +141,17 @@ class LabelingQualityChecker:
                 )
 
             # ORPHAN ERROR
-            # (Happens if no manual relation exists AND the point falls outside all bounding boxes)
             elif len(owners) == 0 and not self.allow_orphans:
                 errors.append(
                     f"[{image_name}] ORPHAN ERROR: Keypoint '{label_str}' (ID: {kp_id}) "
                     f"has no manual relation and resides outside all bounding boxes."
                 )
 
-        # DUPLICATE KEYPOINT ON SAME BOX ERROR
-        for parent_id, kp_label_list in parent_keypoint_labels.items():
+        # --- B. BOUNDING BOX-LEVEL CHECKS ---
+        for box_id in bboxes.keys():
+            kp_label_list = parent_keypoint_labels.get(box_id, [])
+
+            # 1. DUPLICATE KEYPOINT CHECK
             seen = set()
             duplicates = set()
             for label in kp_label_list:
@@ -144,16 +161,26 @@ class LabelingQualityChecker:
 
             if duplicates:
                 errors.append(
-                    f"[{image_name}] DUPLICATE KEYPOINT: Bounding box '{parent_id}' "
+                    f"[{image_name}] DUPLICATE KEYPOINT: Bounding box '{box_id}' "
                     f"owns multiple keypoints with the exact same label(s): {list(duplicates)}"
                 )
 
-        return errors
+            # 2. MISSING REQUIRED KEYPOINTS CHECK (NEW)
+            attached_set = set(kp_label_list)
+            missing = self.required_keypoints - attached_set
+            if missing:
+                errors.append(
+                    f"[{image_name}] INCOMPLETE BOX: Bounding box '{box_id}' "
+                    f"is missing required keypoint(s): {sorted(list(missing))}"
+                )
+
+        # Return errors along with total bounding box count found
+        return errors, len(bboxes)
 
 if __name__ == "__main__":
     checker = LabelingQualityChecker()
 
     try:
-        checker.check_file("C:/Users/m1478/Downloads/project-9-at-2026-08-08-16-58-656f5227.json")
+        checker.check_file("C:/Users/m1478/OneDrive/Документы/CS_Degree/Y3B/Robotics Workshop/chess-bot/ZED/zed_board_images_3/moataz_labels.json")
     except LabelingQualityError as e:
         print(e)
