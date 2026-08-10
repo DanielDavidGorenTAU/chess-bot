@@ -31,16 +31,32 @@ class LabelStudioToYOLOPoseConverter:
         converted_tasks = []  # Stores tuple of (txt_filename, yolo_lines)
 
         for task_idx, task in enumerate(tasks):
-            image_path = task.get("data", {}).get("image", f"image_{task_idx}.jpg")
+            image_path = task.get("data", {}).get("image", f"img_{task_idx}.jpg")
             
-            # Extract clean image filename
-            image_filename = os.path.basename(image_path).split("?")[0]
-            txt_filename = os.path.splitext(image_filename)[0] + ".txt"
+            # Extract raw image filename without paths or URL parameters
+            raw_image_filename = os.path.basename(image_path).split("?")[0]
+            raw_name_no_ext = os.path.splitext(raw_image_filename)[0]
+
+            # Drop hash/UUID prefix up to 'img_'
+            if "img_" in raw_name_no_ext:
+                clean_name = raw_name_no_ext[raw_name_no_ext.find("img_"):]
+            else:
+                clean_name = raw_name_no_ext
+
+            txt_filename = f"{clean_name}.txt"
+
+            # Strict check: Ensure target filename starts with 'img_'
+            if not txt_filename.startswith("img_"):
+                total_errors += 1
+                error_report.append(
+                    f"[{raw_image_filename}] Invalid Filename: Target filename '{txt_filename}' "
+                    f"does not start with 'img_'."
+                )
 
             task_yolo_lines = []
 
             for annotation in task.get("annotations", []):
-                lines, errors = self._process_annotation(annotation, image_filename)
+                lines, errors = self._process_annotation(annotation, raw_image_filename)
                 task_yolo_lines.extend(lines)
                 if errors:
                     total_errors += len(errors)
@@ -52,7 +68,7 @@ class LabelStudioToYOLOPoseConverter:
         # DECISION POINT: Raise error notice if issues were found
         # -----------------------------------------------------------
         if total_errors > 0:
-            error_msg = f"Found {total_errors} conversion error(s) / missing keypoint(s):\n" + "\n".join(f"- {e}" for e in error_report)
+            error_msg = f"Found {total_errors} conversion error(s) / validation issue(s):\n" + "\n".join(f"- {e}" for e in error_report)
             raise ConversionError(error_msg)
 
         # -----------------------------------------------------------
@@ -144,7 +160,7 @@ class LabelStudioToYOLOPoseConverter:
             w_norm = bw / 100.0
             h_norm = bh / 100.0
 
-            # 3. Format keypoints (head first, then base) - NO 0 0 0 FALLBACK
+            # 3. Format keypoints (head first, then base)
             kp_tokens = []
             attached_kps = box_keypoints.get(box_id, {})
 
@@ -161,9 +177,9 @@ class LabelStudioToYOLOPoseConverter:
         return yolo_lines, errors
 
 if __name__ == "__main__":
-    converter = LabelStudioToYOLOPoseConverter(output_dir="./yolo_pose_labels")
+    converter = LabelStudioToYOLOPoseConverter(output_dir="/home/checkmate/Downloads/data_set_carton/labels")
     
     try:
-        converter.convert_file("C:/Users/m1478/OneDrive/Документы/CS_Degree/Y3B/Robotics Workshop/chess-bot/ZED/zed_board_images_3/moataz_labels.json")
+        converter.convert_file("/home/checkmate/Documents/chess-bot/ZED/zed_board_images_3/daniel_labels_2.json")
     except ConversionError as e:
         print(e)

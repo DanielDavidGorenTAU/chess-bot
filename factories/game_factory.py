@@ -8,7 +8,7 @@ from arm.playing_robot import *
 from ZED.cameralib import Camera
 from arm.chessbot import RobotHardware
 from ChessLogic.engine import ChessEngine
-
+from arm.StorageManager import StorageManager
 
 class GameFactory:
     """Dependency Injector responsible for constructing all sub-systems."""
@@ -64,6 +64,7 @@ class GameFactory:
             name=self.config.game.black_name
         )
         storage = StorageManager()
+        storage.calibrate_storage_from_fen(self.config.game.initial_fen)
         print(self.config.game.initial_fen)
         return Game(
             white_player=white_player,

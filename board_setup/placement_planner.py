@@ -7,12 +7,12 @@ class PlacementPlanner():
     def __init__(self, fen: str):
         self.piece_target_stack_array = None
         self.grave_yard_counter_array = [1]*12 #counter for off board pieces, number represents the next grave yard cell for piece
-        self._fen_to_targets()
+        self._fen_to_targets(fen)
         
 
     def _fen_to_targets(self, fen:str):
         self.piece_target_stack_array = [[] for _ in range(12)]
-        int_grid = parse_fen_to_int_grid(fen)
+        int_grid, _ = parse_fen_to_int_grid(fen)
         for row in range(8):
             for col in range(8):
                 piece_type = int_grid[row][col]

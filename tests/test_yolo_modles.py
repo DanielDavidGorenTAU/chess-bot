@@ -13,8 +13,8 @@ from ZED.cameralib import Camera
 if __name__ == "__main__":
     image_path = "/home/checkmate/Documents/chess-bot/yolo/game_photos/00_20260806_125747_340.png"
     with Camera() as camera:
-        yolo_model = BoardPiecesDetector(model_name="advanced", camera=camera, save_regularly=False)
-        yolo_model.predict(image_path)
+        yolo_model = BoardPiecesDetector(model_name="binary", camera=camera, save_regularly=False)
+        yolo_model.predict()
         
 
     

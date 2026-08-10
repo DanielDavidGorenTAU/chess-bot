@@ -197,13 +197,6 @@ class RobotHardware(AbstractRobotHardware):
 
         self.create_physical_storage_positions()    
         
-        
-        
-
-
-
-
-
 
     @override
     def __exit__(self, exc_type, exc_value, traceback):
@@ -401,7 +394,7 @@ class RobotHardware(AbstractRobotHardware):
         if state == 'lying':
             self.move_to(middle_position, z=self.safe_height)
 
-            self.move_to(z=self.table_height+0.0015)
+            self.move_to(z=self.table_height+0.005)
 
             self.set_gripper(CLOSED) # grip the piece
 
@@ -708,17 +701,59 @@ def get_head_camera_point():
 
 
 def main():
-    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_, speed=0.5) as robot:
+    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_, speed=0.1) as robot:
        # מלך, מלכה, רץ, פרש, צריח, רגלי = king, queen, bishop, knight, rook, pawn
         print("starting session")
         #robot.rtde_c.moveJ(BASE_URI, 1, 0.5)
         #robot.move_to(robot.start_position, z=robot.sky_height)
-        
-        robot.move_to(robot.positions['a1'],z=robot.floor_height + 0.0)
-        #robot.move_to(robot.move_on_chessboard(robot.positions['a1'], right=-0.4*CELL_LENGTH, up=-2.5*CELL_LENGTH))
-        
+        #robot.move_to(robot.positions['b2'],z=robot.safe_height)
+        #pawn
+        #robot.set_gripper(grip_size[PieceType.PAWN] - GRIP_RELEASE_OFFSET, wait=False) #  open the gripper
+        #robot.move_to(robot.positions['b2'],z=robot.grip_height[PieceType.PAWN], orientation=robot.get_rotated_tcp_orientation(robot.positions['b2'],Rz=45))
+        #robot.set_gripper(134)
+        #robot.move_to(robot.move_on_chessboard(robot.pose, right=-0.5, up=-0.5))
+        #robot.set_gripper(CLOSED)
+
+        # knight left side
+        #robot.set_gripper(grip_size[PieceType.ROOK] - GRIP_RELEASE_OFFSET)
+        #robot.move_to(robot.positions['b2'],z=robot.safe_height, orientation=robot.get_rotated_tcp_orientation(robot.positions['b1'],Rz=45))
+        #robot.move_to(robot.move_on_chessboard(robot.pose, right=-0.5, up=-0.0))
+        #robot.set_gripper(140)
+        #robot.move_to(robot.move_on_chessboard(robot.pose, right=-0.5, up=-0.0))
+        #robot.move_to(z=robot.grip_height[PieceType.KNIGHT])
+        #robot.set_gripper(CLOSED)
+
+        #print(robot.normalize_pos(get_head_camera_point()))
         
 
+        #point = get_head_camera_point()
+
+        #print("point:", point)
+        #print("type:", type(point))
+
+        #print(robot.normalize_pos(point.tolist()))
+        #robot.move_to(robot.normalize_pos(get_head_camera_point().tolist()))
+
+        #robot.pick_up_dead_piece(PieceType.PAWN, "lying", "c1")
+        robot.move_to(cube_pose, dz = 0.11)
+        robot.move_to(orientation = robot.get_rotated_tcp_orientation(Rx=85))
+
+        #robot.move_to(z=robot.safe_height)
+        #robot.move_to([-0.7012659839948736, -0.36316477753682014, -0.32982245547551975] + robot.down_orientation)
+
+        #robot.move_to(z=robot.safe_height)
+        #robot.move_to([-0.5900482619985574, -0.3595256257140383, -0.32982245547551975] + robot.down_orientation)
+
+        #robot.move_to(z=robot.safe_height)
+
+        #robot.move_to([-0.6480715733896221, -0.37616930509489405, -0.32982245547551975] + robot.down_orientation)
+        
+        #get_12_camera_points()
+        
+        
+        #robot.move_to(robot.normalize_pos(get_head_camera_point().tolist()))
+        #robot.move_to([-0.7012659839948736, -0.36316477753682014, -0.2629104676755676] + robot.down_orientation)
+        print(robot.get_gripper())
         #robot.move_to(robot.start_position, z=robot.sky_height)
         print("end of session")
 

@@ -181,6 +181,6 @@ if __name__ == "__main__":
     checker = LabelingQualityChecker()
 
     try:
-        checker.check_file("C:/Users/m1478/OneDrive/Документы/CS_Degree/Y3B/Robotics Workshop/chess-bot/ZED/zed_board_images_3/moataz_labels.json")
+        checker.check_file("/home/checkmate/Documents/chess-bot/ZED/zed_board_images_3/daniel_labels_2.json")
     except LabelingQualityError as e:
         print(e)

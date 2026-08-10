@@ -2,6 +2,7 @@ import pyzed.sl as sl
 import cv2
 import os
 from datetime import datetime
+import numpy as np
 
 # Folder where images will be saved (inside project)
 SAVE_DIR = "zed_setting_images_2"
@@ -16,7 +17,13 @@ class Camera:
         self.init_params.coordinate_units = sl.UNIT.METER
         self.init_params.camera_fps = 15
         self.brightness = brightness #0-8
+        self.clicked_point = None
 
+    def mouse_callback(self, event, x, y, flags, param):
+        if event == cv2.EVENT_LBUTTONDOWN:
+            self.clicked_point = (x, y)
+            print(f"Clicked point: {self.clicked_point}")
+        
     def _take_photo(self, image_mat):
         """
         Private method, ZED takes the actual photo
@@ -150,7 +157,50 @@ class Camera:
 
             elif key == ord("q"):
                 return False
-    
+    def get_two_points(self):
+        point_cloud = sl.Mat()
+        base_point = None
+        head_point = None
+
+        image = sl.Mat()
+        runtime_params = sl.RuntimeParameters()
+        cv2.namedWindow("ZED")
+        cv2.setMouseCallback("ZED", self.mouse_callback)
+
+        while head_point==None:
+            if self.zed.grab(runtime_params) == sl.ERROR_CODE.SUCCESS:
+                # Left image
+                self.zed.retrieve_image(image, sl.VIEW.LEFT)
+                # Point cloud
+                self.zed.retrieve_measure(
+                    point_cloud,
+                    sl.MEASURE.XYZ
+                )
+                frame = image.get_data()
+                if self.clicked_point is not None:
+                    x, y = self.clicked_point
+                    err, point3d = point_cloud.get_value(x, y)
+                    if err == sl.ERROR_CODE.SUCCESS:
+                        X_, Y_, Z_ = point3d[:3]
+                        if np.isfinite(X_) and np.isfinite(Y_) and np.isfinite(Z_):
+                            print(f"Pixel ({x}, {y})")
+                            print(f"3D point: X={X_:.3f}, Y={Y_:.3f}, Z={Z_:.3f} meters")
+                            if(base_point is None):
+                                base_point = [X_, Y_, Z_]
+                                print(f"base_point is set")
+                            else:
+                                head_point = [X_, Y_, Z_]
+                                print(f"head_point is set")
+                        else:
+                            print("Invalid depth at this pixel")
+
+                    self.clicked_point = None
+                cv2.imshow("ZED", frame)
+            key = cv2.waitKey(1)
+
+            if key == 27:  # ESC
+                break
+        return  head_point, base_point
     def __enter__(self):
         status = self.zed.open(self.init_params)
         if status != sl.ERROR_CODE.SUCCESS:

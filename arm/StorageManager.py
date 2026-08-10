@@ -32,7 +32,7 @@ class StorageManager:
         fen_char = convert_type_and_color_to_fen_char(type, color)
         self.storage_state[f"s{fen_char}"] += 1 
 
-        self.print_state()  # Optional: Print the updated state for debugging
+        #self.print_state()  # Optional: Print the updated state for debugging
 
     def register_human_promotion(self, type: PieceType, color: str):
         """
@@ -41,7 +41,7 @@ class StorageManager:
         fen_char = convert_type_and_color_to_fen_char(type, color)
         self.storage_state[f"s{fen_char}"] -= 1 
 
-        self.print_state()  # Optional: Print the updated state for debugging
+        #self.print_state()  # Optional: Print the updated state for debugging
 
     # ==============================================================
     # Movement functions for robot moves
@@ -56,7 +56,7 @@ class StorageManager:
         self.storage_state[f"s{fen_char}"] += 1 
         index = self.storage_state[f"s{fen_char}"]
         
-        self.print_state()  # Optional: Print the updated state for debugging
+        #self.print_state()  # Optional: Print the updated state for debugging
 
         return f"s{fen_char}{index}"
         
@@ -74,7 +74,7 @@ class StorageManager:
         slot_name = f"s{fen_char}{index}"
         self.storage_state[f"s{fen_char}"] -= 1 
 
-        self.print_state()  # Optional: Print the updated state for debugging
+        #self.print_state()  # Optional: Print the updated state for debugging
 
         return slot_name
 

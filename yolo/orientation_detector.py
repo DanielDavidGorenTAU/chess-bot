@@ -17,12 +17,12 @@ DEFAULT_CONF: float = 0.5
 @dataclass
 class PiecePose:
     """Dataclass representing the target piece's pose and metadata."""
-    head: Tuple[float, float]
-    base: Tuple[float, float]
+    head: Tuple[float, float, float]
+    base: Tuple[float, float, float]
     orientation: Orientation
     confidence: float
 
-class OrientationDetector(ABC, VisionModel):
+class OrientationDetector(VisionModel):
     def __init__(self, camera: Optional[Camera] = None, conf: float = 0.25, path_list = None):
         super().__init__(camera=camera, conf = conf, path_list = path_list)
 

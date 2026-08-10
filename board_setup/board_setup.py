@@ -15,24 +15,27 @@ class PieceIngestionPipeline:
         
 
     def process_next_piece(self):
-            # 1. Take picture & detect orientation
-            head, base, orientation = self.orientation_detector.detect_pickup_pose()
+        # 1. Take picture & detect orientation
+        pose = self.orientation_detector.detect_pickup_pose()
+        head = pose.head
+        base = pose.base
+        orientation = pose.orientation
 
-            # 2. Arm move piece to platform
-            if not self.robot.move_piece_to_platform(head, base, orientation):
-                raise RobotFailedException("Robot failed while moving piece to platform")
+        # 2. Arm move piece to platform
+        if not self.robot.move_piece_to_platform(head, base, orientation):
+            raise RobotFailedException("Robot failed while moving piece to platform")
 
-            # 3. Detect piece class on platform
-            piece_type: ColoredPieceType = self.platform_classifier.identify_piece()
+        # 3. Detect piece class on platform
+        piece_type: ColoredPieceType = self.platform_classifier.identify_piece()
 
-            # 4. Decide where to put on (board or grave yard)
-            target_square = self.placement_planner.get_targer_for_piece(piece_type)
+        # 4. Decide where to put on (board or grave yard)
+        target_square = self.placement_planner.get_targer_for_piece(piece_type)
 
-            # 5. Move piece from platform to board
-            if not self.robot.move_from_platform_to_target(target_square):
-                raise RobotFailedException("Robot failed while moving piece from platform to target "+target_square)
+        # 5. Move piece from platform to board
+        if not self.robot.move_from_platform_to_target(target_square):
+            raise RobotFailedException("Robot failed while moving piece from platform to target "+target_square)
 
-            print(f"Placed {INT_TO_NAME[piece_type]} onto {target_square}")
+        print(f"Placed {INT_TO_NAME[piece_type]} onto {target_square}")
 
 
 class BoardSetupService:
@@ -47,7 +50,7 @@ class BoardSetupService:
         print("[Setup] Starting piece ingestion loop...")
         
         while True:                   #####TODO: How to end the loop
-            if not self.pipeline.has_piece_in_tray():
+            if False: ###not self.pipeline.has_piece_in_tray()
                 print("[Setup] Pickup tray is empty. Setup paused/finished.")
                 break
                 

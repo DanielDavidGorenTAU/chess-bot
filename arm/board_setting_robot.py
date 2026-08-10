@@ -2,8 +2,9 @@ from abc import ABC, abstractmethod
 import math
 from common.typing import Pos
 from common.utils import *
-from arm.abstract_robot_hardware import AbstractRobotHardware
+from arm.chessbot import RobotHardware
 from arm.measurements import *
+from common.enums_and_dicts import Orientation
 
 class BoardSettingRobot(ABC):
 
@@ -13,7 +14,7 @@ class BoardSettingRobot(ABC):
     """
 
     @abstractmethod
-    def move_piece_to_platform(self, head_pos: Pos, base_pos: Pos) -> bool:
+    def move_piece_to_platform(self, head_pos: Pos, base_pos: Pos, orientation) -> bool:
         pass
 
     @abstractmethod
@@ -29,23 +30,27 @@ class BoardSettingArm(BoardSettingRobot):
     Real UR5E arm class for setting board before game
     """
 
-    def __init__(self, robot_hardware: AbstractRobotHardware):
+    def __init__(self, robot_hardware: RobotHardware):
         self.robot_hardware = robot_hardware
 
-    def move_piece_to_platform(self, head_pos: Pos, base_pos: Pos) -> bool:
-        head_pos = self.robot_hardware.normalize_pos(head_pos)
-        base_pos = self.robot_hardware.normalize_pos(base_pos)
+    def move_piece_to_platform(self, head_pos: Pos, base_pos: Pos, orientation) -> bool:
+        # translate to robot coordinates
+        head_pos = self.robot_hardware.camera_vector_to_robot_vector(head_pos)
+        base_pos = self.robot_hardware.camera_vector_to_robot_vector(base_pos)
+        #head_pos = self.robot_hardware.normalize_pos(head_pos)
+        #base_pos = self.robot_hardware.normalize_pos(base_pos)
 
         dx, dy, dz = [head_pos[i] - base_pos[i] for i in range(3)]
         drz = math.degrees(math.atan2(dx, dy))
         elevation = math.degrees(math.atan2(dz, math.hypot(dx, dy)))
         is_standing = (45.0 < elevation < 135.0)
+        is_standing = True if orientation == Orientation.STANDING else False
         HEAD_BIAS = 0.6
         pickup_pos = weighted_avg(head_pos[:3], base_pos[:3], HEAD_BIAS)
         if is_standing:
             pickup_pos = [*pickup_pos, *self.robot_hardware.down_orientation]
         else:
-            pickup_pos = [*pickup_pos, *self.robot_hardware.get_rotated_tcp_orientation(Rz=drz+180)]
+            pickup_pos = [pickup_pos[X], pickup_pos[Y],self.robot_hardware.table_height+0.005, *self.robot_hardware.get_rotated_tcp_orientation(Rz=drz+180)]
 
         self.robot_hardware.move_to(z=self.robot_hardware.safe_height)
         self.robot_hardware.set_gripper(HALF_OPENED, wait=False)
@@ -55,13 +60,19 @@ class BoardSettingArm(BoardSettingRobot):
         self.robot_hardware.move_to(z=self.robot_hardware.safe_height)
         self.robot_hardware.move_to(cube_pose, z=self.robot_hardware.safe_height)
 
+        dx_alignment = 0.0
+        dz_alignment = 0.0
         if not is_standing:
-            self.robot_hardware.move_to(orientation = self.get_rotated_tcp_orientation(Rx=85))
+            self.robot_hardware.move_to(orientation = self.robot_hardware.get_rotated_tcp_orientation(Rx=85))
+            dx_alignment = -0.005
+            dz_alignment = 0.11
 
-        piece_height_worst_case = dz * 1.2
-        self.robot_hardware.move_to(z=cube_pose[Z], dz=piece_height_worst_case * HEAD_BIAS)
-        self.robot_hardware.set_gripper(HALF_OPENED)
-        self.robot_hardware.move_to(z=self.robot_hardware.safe_height)
+        piece_height_worst_case = dz * 1.3
+        self.robot_hardware.move_to(z=cube_pose[Z], dz=piece_height_worst_case * HEAD_BIAS + dz_alignment)
+        self.robot_hardware.set_gripper(open_by=GRIP_RELEASE_OFFSET)
+
+
+        self.robot_hardware.move_to(cube_pose,dx=dx_alignment,z=self.robot_hardware.safe_height)
 
 
     def move_from_platform_to_target(self, target: str, type: PieceType) -> bool:
@@ -102,7 +113,7 @@ class BoardSettingMock(BoardSettingRobot):
         """
         self.res = res
     
-    def move_piece_to_platform(self, head_pos: Pos, base_pos: Pos) -> bool:
+    def move_piece_to_platform(self, head_pos: Pos, base_pos: Pos, orientation) -> bool:
         return self.res
 
     def move_from_platform_to_target(self, target: str, type: str) -> bool:
