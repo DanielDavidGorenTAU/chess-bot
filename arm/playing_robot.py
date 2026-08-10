@@ -4,6 +4,7 @@ from common.enums_and_dicts import *
 from .chessbot import *
 from main.config import AppConfig
 from .StorageManager import StorageManager
+from .robot_board_mapper import RobotBoardMapper
 
 class PlayingRobot(ABC):
 
@@ -44,6 +45,7 @@ class PlayingArm(PlayingRobot):
     def __init__(self, robot_hardware: RobotHardware):
         self.robot_hardware = robot_hardware
         self.storage = StorageManager() # call Singleton
+        self.board_mapper = RobotBoardMapper()
 
         config = AppConfig.load("/home/checkmate/Documents/chess-bot/main/config.yaml")
         self.human_color = config.game.get_color_for("human")
@@ -55,6 +57,8 @@ class PlayingArm(PlayingRobot):
         Private method for moving a piece, using the hardware class
         """
         robot = self.robot_hardware
+        #dx, dy = self.board_mapper.get_piece_grasping_data(start_pos)
+
         if speed is None:
             speed = robot.speed
         if acceleration is None:
@@ -78,7 +82,7 @@ class PlayingArm(PlayingRobot):
         # grip the piece
         robot.move_to(z=robot.grip_height[type])
         robot.set_gripper(CLOSED) 
-        robot.move_to(start_pos, z=robot.safe_height)
+        robot.move_to(z=robot.safe_height)
 
         # move to end spot
         robot.move_to(end_pos, z=robot.safe_height, speed=speed, acceleration=acceleration)

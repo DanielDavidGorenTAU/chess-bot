@@ -4,6 +4,7 @@ from .fen_translator import Translator, BinaryToFenTranslator
 from arm.StorageManager import StorageManager
 from common.utils import convert_fen_char_to_type_and_color
 from collections import Counter
+from arm.perception_state import PerceptionState
 
 class HumanMoveInterpreter:
     """
@@ -19,7 +20,7 @@ class HumanMoveInterpreter:
 
     def update_fen(self, old_fen: str, image_path: Optional[str] = None) -> str:
         """
-        Captures/processes an image, runs detection, and translates the detected 
+        Captures/processes an image, runs detection, updates storage, and translates the detected 
         pieces into an updated FEN string.
 
         :param old_fen: The previous game state FEN string.
@@ -27,6 +28,7 @@ class HumanMoveInterpreter:
         :return: Updated FEN string.
         """
         detections_file = self.yolo_model.predict(image_path=image_path)
+        PerceptionState().set_latest_detections(detections_file)
         new_fen = self.translator.translate_to_fen(old_fen, detections_file)
         self._sync_storage(old_fen, new_fen)
         return new_fen
