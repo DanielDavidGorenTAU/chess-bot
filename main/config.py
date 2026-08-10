@@ -24,6 +24,9 @@ class EngineConfig:
 @dataclass
 class VisionConfig:
     model_name: str = "binary"
+    manual_orientation: bool = False
+    manual_on_platform: bool = False
+
 
 
 @dataclass

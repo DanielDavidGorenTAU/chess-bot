@@ -1,5 +1,6 @@
 import os
 import cv2
+from abc import ABC, abstractmethod
 from common.enums_and_dicts import Orientation
 from .vision_model import VisionModel
 from typing import Optional, Tuple
@@ -21,8 +22,15 @@ class PiecePose:
     orientation: Orientation
     confidence: float
 
+class OrientationDetector(ABC, VisionModel):
+    def __init__(self, camera: Optional[Camera] = None, conf: float = 0.25, path_list = None):
+        super().__init__(camera=camera, conf = conf, path_list = path_list)
 
-class OrientationDetector(VisionModel):
+    @abstractmethod
+    def detect_pickup_pose(self, image_path: Optional[str] = None) -> Optional[PiecePose]:
+        pass
+
+class YoloOrientationDetector(OrientationDetector):
     """
     Wrapper class for running predictions with YOLO Pose to detect orientation 
     and center of chess piece for grabbing.
@@ -100,3 +108,20 @@ class OrientationDetector(VisionModel):
         print(f"Saved prediction result image to: {save_path}")
 
         return target_piece
+
+class ManualOrientationDetector(OrientationDetector):
+    def __init__(self, camera: Optional[Camera] = None, conf: float = 0.25, path_list = None):
+        super().__init__(camera=camera, conf = conf, path_list = path_list)
+
+    def detect_pickup_pose(self, image_path: Optional[str] = None) -> Optional[PiecePose]:
+        head, base = self.camera.get_two_points()
+        oreintation_num = int(input("0 for Lying, 1 for Standing. Choose: "))
+        orientation = Orientation(oreintation_num)
+        return PiecePose(head=head, base=base, orientation=orientation, confidence=100)
+
+
+
+
+
+    
+    

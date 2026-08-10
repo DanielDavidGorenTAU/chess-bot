@@ -52,6 +52,19 @@ class YOLOPieceClassifier(PlatformPieceClassifier):
         else:
             raise YoloVisionException("No class detected on platform")
 
+class ManualPieceClassifier(PlatformPieceClassifier):
+    """ (almost) Mock Class"""
+    def __init__(self, camera: Optional[Camera] = None, conf: float = DEFAULT_CONF):
+        super().__init__(camera=camera, conf=conf)
+
+    def identify_piece(self, image_path: Optional[str] = None) -> ColoredPieceType:
+        """
+        Get piece class by user shell dialog.
+        """
+        int_class = int(input("Choose piece class (0-11): "))
+        return ColoredPieceType(int_class)
+
+
 
 #### IF NEEDED ####
 class CNNPieceClassifier(PlatformPieceClassifier):
