@@ -52,6 +52,43 @@ class Translator(ABC):
 
 
 class BinaryToFenTranslator(Translator):
+    def _repair_occlusions(self, old_board_grid, detected_color_grid, active_turn):
+        """
+        Infers missing pieces (occluded by larger pieces) based on game rules
+        and restores them to the detected color grid.
+        """
+        repaired_grid = [row[:] for row in detected_color_grid]
+
+        # En Passant Rows
+        ep_passive_row = 3 if active_turn == 1 else 4
+        ep_capture_row = 2 if active_turn == 1 else 5
+
+        for r in range(8):
+            for c in range(8):
+                old_piece = old_board_grid[r][c]
+                old_color = get_color(old_piece)
+                new_color = detected_color_grid[r][c]
+
+                # If a piece was present before but YOLO missed it now
+                if old_color != -1 and new_color == -1:
+                    is_passive_piece = (old_color != active_turn)
+
+                    # --- EN PASSANT CHECK ---
+                    is_en_passant = False
+                    
+                    # Check if the missing passive piece is a Pawn (3 = Black, 9 = White)
+                    if old_piece in [3, 9] and r == ep_passive_row:
+                        # Check if the active player moved a piece to the EP capture square directly behind it
+                        if detected_color_grid[ep_capture_row][c] == active_turn:
+                            is_en_passant = True
+                            print(f"[Occlusion Recovery] En Passant detected! Not restoring captured pawn at ({r}, {c})")
+
+                    # A passive piece cannot move. If it's missing and NOT captured via EP, restore it.
+                    if is_passive_piece and not is_en_passant:
+                        repaired_grid[r][c] = old_color
+                        print(f"[Occlusion Recovery] Restored hidden piece at ({r}, {c})")
+
+        return repaired_grid
 
     def _create_detected_grid(self, detections_file, corners_file, target_size=800):
         """
@@ -93,6 +130,14 @@ class BinaryToFenTranslator(Translator):
         """
         old_board_grid, active_turn = parse_fen_to_int_grid(old_fen)
         detected_color_grid = self._create_detected_grid(detections_file, CORNERS_FILE)
+
+        # Call occlusion repair before evaluating moves
+        detected_color_grid = self._repair_occlusions(
+            old_board_grid, 
+            detected_color_grid, 
+            active_turn
+        )
+
         self._debug_boards([old_board_grid, detected_color_grid])
 
         moved_source=[]
@@ -175,3 +220,5 @@ class BinaryToFenTranslator(Translator):
             print("Error: Unexpected move scenario.")
 
         return grid_to_fen(old_board_grid, 1-active_turn)
+
+    
