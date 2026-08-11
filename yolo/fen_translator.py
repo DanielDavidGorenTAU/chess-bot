@@ -11,6 +11,8 @@ CORNERS_FILE = "/home/checkmate/Documents/chess-bot/corners.json"
 
 class Translator(ABC):
 
+    def __init__(self, flip: bool):
+            self.flip = flip # If the buttom side (camera's prespective) is black need to flip to get correct FEN notation. 
 
     def _debug_boards(self, matrices):
         for mat in matrices:
@@ -39,7 +41,13 @@ class Translator(ABC):
         col = int(wx // square_size)
         row = int(wy // square_size)
         
-        return max(0, min(7, row)), max(0, min(7, col))
+        row, col =  max(0, min(7, row)), max(0, min(7, col))
+
+        if self.flip:
+            row = 7 - row
+            col = 7 - col
+
+        return row, col
 
 
     @abstractmethod
@@ -52,6 +60,9 @@ class Translator(ABC):
 
 
 class BinaryToFenTranslator(Translator):
+
+    def __init__(self, flip: bool):
+        super.__init__(flip)
 
     def _create_detected_grid(self, detections_file, corners_file, target_size=800):
         """

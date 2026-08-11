@@ -13,6 +13,9 @@ if __name__ == "__main__":
     hw_factory = HardwareFactory(config)
     camera = hw_factory.get_camera()
     robot_hw = hw_factory.get_robot_hardware()
+    ## Base case: the robot is white so no need to flip, otherwise we need to flip the FEN structure is constant.
+    if config.game.white_player == "human":
+        robot_hw.flip_board_robot_view()
 
     # 3. Create domain-specific setup service (if configured)
     board_setup_service = None

@@ -134,6 +134,12 @@ class RobotHardware(AbstractRobotHardware):
         self.table_height = 0
         self.storage_state = {}
 
+    def flip_board_robot_view(self):
+        """ Flips A1 <-> H8 if the we flip the sides and black side is near the camera"""
+        temp = self.A1
+        self.A1 = self.H8
+        self.H8 = temp
+
     @override
     def __enter__(self):
         self.rtde_c = RTDEControlInterface(self.robot_ip)
