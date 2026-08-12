@@ -1,3 +1,4 @@
+import chess
 from abc import ABC, abstractmethod
 import json
 import cv2
@@ -56,6 +57,13 @@ class Translator(ABC):
         Given an old FEN and a labels file, translates the detected pieces into a new FEN string.
         """
         pass
+
+    @abstractmethod
+    def translate_to_move(self, board: chess.Board, detections_file: str):
+        """
+        Given an old board and a labels file, translates the detected pieces into a move UCI string.
+        """
+        pass        
 
 
 
@@ -186,3 +194,96 @@ class BinaryToFenTranslator(Translator):
             print("Error: Unexpected move scenario.")
 
         return grid_to_fen(old_board_grid, 1-active_turn)
+    
+
+    def translate_to_move(self, board: chess.Board, detections_file: str) -> str:
+        """
+        Given an old board and a labels file, translates the detected pieces into a move UCI string.
+        """
+        old_board_grid, active_turn = parse_board_to_int_grid(board)
+        detected_color_grid = self._create_detected_grid(detections_file, CORNERS_FILE)
+        self._debug_boards([old_board_grid, detected_color_grid])
+
+        moved_source=[]
+        moved_target=[]
+        captured=[]
+
+        for row in range(8):
+            for col in range(8):
+                old_piece = old_board_grid[row][col]
+                old_piece_type = get_color(old_piece)
+                new_piece_type = detected_color_grid[row][col]
+
+                if old_piece_type == new_piece_type:
+                    continue  # No change in piece type
+                elif old_piece_type == -1 and new_piece_type != -1:
+                    # moved here
+                    moved_target.append((row, col))
+                elif old_piece_type != -1 and new_piece_type == -1:
+                    # moved from here
+                    moved_source.append((row, col))
+                elif old_piece_type != -1 and new_piece_type != -1 and old_piece_type != new_piece_type:
+                    # captured here
+                    print(f"Captured piece at ({row}, {col}): old_piece_type={old_piece_type}, new_piece_type={new_piece_type}")
+                    captured.append((row, col))
+
+        print(f"Moved Source: {moved_source}, Moved Target: {moved_target}, Captured: {captured}")
+        source_sqr = ""
+        target_sqr = ""
+        if len(captured) > 0:
+            # Handle capture: Move the piece from moved_source to captured square
+            capturing_piece = old_board_grid[moved_source[0][0]][moved_source[0][1]]
+            source_sqr = convert_coordinates_to_square(moved_source[0][0], moved_source[0][1])
+            target_sqr = convert_coordinates_to_square(captured[0][0], captured[0][1])
+
+
+        elif len(moved_source) == 1 and len(moved_target) == 1:
+            # Handle normal move: Move the piece from moved_source to moved_target
+            moving_piece = old_board_grid[moved_source[0][0]][moved_source[0][1]]
+            old_board_grid[moved_source[0][0]][moved_source[0][1]] = -1
+            old_board_grid[moved_target[0][0]][moved_target[0][1]] = moving_piece
+            source_sqr = convert_coordinates_to_square(moved_source[0][0], moved_source[0][1])
+            target_sqr = convert_coordinates_to_square(moved_target[0][0], moved_target[0][1])    
+
+                    
+        elif len(moved_source) == 2 and len(moved_target) == 2:
+            # Handle castling: Move the king and rook to their new positions
+            king_source = None
+            king_target = None
+
+            distance_from_mid_source_0 = abs(moved_source[0][1] - 4) 
+            distance_from_mid_source_1 = abs(moved_source[1][1] - 4) 
+            distance_from_mid_target_0 = abs(moved_target[0][1] - 4) 
+            distance_from_mid_target_1 = abs(moved_target[1][1] - 4) 
+
+            if distance_from_mid_source_0 < distance_from_mid_source_1:
+                king_source = moved_source[0]
+            else:
+                king_source = moved_source[1]
+            if distance_from_mid_target_0 > distance_from_mid_target_1:
+                king_target = moved_target[0]
+            else:
+                king_target = moved_target[1]
+            
+            king_piece = old_board_grid[king_source[0]][king_source[1]]
+            rook_piece = king_piece + 3
+            
+            source_sqr = convert_coordinates_to_square(king_source[0], king_source[1])
+            target_sqr = convert_coordinates_to_square(king_target[0], king_target[1])  
+            
+        elif len(moved_source) == 2 and len(moved_target) == 1:
+            source0_label = old_board_grid[moved_source[0][0]][moved_source[0][1]]
+            source1_label = old_board_grid[moved_source[1][0]][moved_source[1][1]]
+            if sorted([source0_label, source1_label]) == [3, 9]:  # one black pawn and one white pawn
+                # Handle en passant: 
+                capturer_source = moved_source[0] if moved_source[1][1]==moved_target[0][1] else moved_source[1] #the capturer iff not on the same column as target
+                capturer_target = moved_target[0]
+                source_sqr = convert_coordinates_to_square(capturer_source[0], capturer_source[1])
+                target_sqr = convert_coordinates_to_square(capturer_target[0], capturer_target[1])                  
+            else:
+                print("Error: Unexpected move scenario.")
+            
+        else:
+            print("Error: Unexpected move scenario.")
+
+        return source_sqr+target_sqr

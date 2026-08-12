@@ -1,15 +1,16 @@
-from typing import Optional
+import chess
 from .board_pieces_detector import BoardPiecesDetector
 from .fen_translator import Translator, BinaryToFenTranslator
 from arm.StorageManager import StorageManager
 from common.utils import convert_fen_char_to_type_and_color
 from collections import Counter
 from arm.perception_state import PerceptionState
+from typing import Optional
 
-class HumanMoveInterpreter:
+class HumanMoveController:
     """
     Coordinates between the vision system (BoardPiecesDetector) and state translation (Translator)
-    to compute updated FEN strings after a human player makes a move.
+    to compute updated board after a human player makes a move.
     """
 
     def __init__(self, yolo_model: BoardPiecesDetector, translator: Optional[Translator] = None):
@@ -18,18 +19,22 @@ class HumanMoveInterpreter:
         self.translator: Translator = translator or BinaryToFenTranslator()
         self.storage = StorageManager() # Singleton
 
-    def update_fen(self, old_fen: str, image_path: Optional[str] = None) -> str:
+    def update_fen(self, board: chess.Board, image_path: Optional[str] = None) -> str:
         """
         Captures/processes an image, runs detection, updates storage, and translates the detected 
         pieces into an updated FEN string.
 
-        :param old_fen: The previous game state FEN string.
+        :param board: The previous game board.
         :param image_path: Optional static image path for testing/debugging.
         :return: Updated FEN string.
         """
+        old_fen = board.fen()
         detections_file = self.yolo_model.predict(image_path=image_path)
         PerceptionState().set_latest_detections(detections_file)
-        new_fen = self.translator.translate_to_fen(old_fen, detections_file)
+        move_str = self.translator.translate_to_move(board, detections_file)
+        chess_move =  chess.Move.from_uci(move_str)
+        board.push(chess_move)
+        new_fen = board.fen()
         self._sync_storage(old_fen, new_fen)
         return new_fen
 

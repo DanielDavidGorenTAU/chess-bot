@@ -1,7 +1,7 @@
 from main.config import AppConfig
 from game.game import Game
 from game.player import Player, HumanPlayer, RobotPlayer
-from yolo.human_interpreter import HumanMoveInterpreter
+from yolo.human_interpreter import HumanMoveController
 from yolo.board_pieces_detector import BoardPiecesDetector
 from yolo.fen_translator import BinaryToFenTranslator  # or factory for translators
 from arm.playing_robot import *
@@ -30,7 +30,7 @@ class GameFactory:
     def create_engine(self):
         return ChessEngine()
 
-    def _build_human_interpreter(self) -> HumanMoveInterpreter:
+    def _build_human_interpreter(self) -> HumanMoveController:
         """Assembles Vision + Translator pipeline."""
         print(f"[Factory] Assembling Vision Pipeline with model '{self.config.vision.model_name}'")
         
@@ -38,7 +38,7 @@ class GameFactory:
         flip = self.config.game.white_player == "human"
         translator = BinaryToFenTranslator(flip=flip)
         
-        return HumanMoveInterpreter(yolo_model=yolo_model, translator=translator)
+        return HumanMoveController(yolo_model=yolo_model, translator=translator)
 
     def _build_player(self, player_type: str, name: str) -> Player:
         """Constructs a Human or Robot player based on config type."""

@@ -1,3 +1,4 @@
+import chess
 from .enums_and_dicts import *
 from collections.abc import Sequence
 from math import hypot
@@ -172,3 +173,21 @@ def convert_fen_char_to_type_and_color(c: str):
         return PieceType.QUEEN, color
     if c.lower() == 'r':
         return PieceType.ROOK, color
+
+def parse_board_to_int_grid(board: chess.Board):
+    """
+    Converts chess.Board into an 8x8 grid of integers (0-11, empty=-1)
+    and extracts active turn (1 for white, 0 for black).
+        
+    Returns:
+        tuple: (grid, turn)
+    """    
+    grid = [[-1 for _ in range(8)] for _ in range(8)]
+
+    for square, piece in board.piece_map().items():
+        row = 7 - chess.square_rank(square)
+        col = chess.square_file(square)
+
+        grid[row][col] = FEN_TO_INT[piece.symbol()]
+    turn = 1 if (board.turn == chess.WHITE) else 0
+    return grid, turn
