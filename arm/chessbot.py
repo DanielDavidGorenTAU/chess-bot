@@ -273,7 +273,7 @@ class RobotHardware(AbstractRobotHardware):
                     tmp_pos = self.move_on_chessboard(tmp_pos, right=direction*STORAGE_WIDTH, up=0)
 
             # next line        
-            tmp_pos = self.move_on_chessboard(tmp_pos, right=-direction*8*STORAGE_WIDTH, up=-direction*STORAGE_HEIGHT)
+            tmp_pos = self.move_on_chessboard(tmp_pos, right=-1*direction*8*STORAGE_WIDTH, up=-1*direction*STORAGE_HEIGHT)
 
     def move_smooth_path___experimental(self, steps, blend_radius=0.03, speed=None, acceleration=None):
         
