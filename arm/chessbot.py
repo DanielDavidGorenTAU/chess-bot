@@ -241,37 +241,39 @@ class RobotHardware(AbstractRobotHardware):
         STORAGE_WIDTH = 5.3
         STORAGE_HEIGHT = 5
 
+        direction = -1 if inverted_board else 1
+
         tmp_pos = storage_start
         for i in range(1,5):
         
             if i == 1: # add special black pieces
                 for type in "rnbqk":
                     self.positions[f's{type}1'] = [tmp_pos[X] ,tmp_pos[Y], self.table_height] + self.down_orientation
-                    tmp_pos = self.move_on_chessboard(tmp_pos, right=-STORAGE_WIDTH, up=0)
+                    tmp_pos = self.move_on_chessboard(tmp_pos, right=direction*STORAGE_WIDTH, up=0)
                 for type in "bnr":
                     self.positions[f's{type}2'] = [tmp_pos[X] ,tmp_pos[Y], self.table_height] + self.down_orientation
-                    tmp_pos = self.move_on_chessboard(tmp_pos, right=-STORAGE_WIDTH, up=0)
+                    tmp_pos = self.move_on_chessboard(tmp_pos, right=direction*STORAGE_WIDTH, up=0)
 
             elif i == 4: # add special white pieces
                 for type in "RNBQK":
                     self.positions[f's{type}1'] = [tmp_pos[X] ,tmp_pos[Y], self.table_height] + self.down_orientation
-                    tmp_pos = self.move_on_chessboard(tmp_pos, right=-STORAGE_WIDTH, up=0)
+                    tmp_pos = self.move_on_chessboard(tmp_pos, right=direction*STORAGE_WIDTH, up=0)
                 for type in "BNR":
                     self.positions[f's{type}2'] = [tmp_pos[X] ,tmp_pos[Y], self.table_height] + self.down_orientation
-                    tmp_pos = self.move_on_chessboard(tmp_pos, right=-STORAGE_WIDTH, up=0)
+                    tmp_pos = self.move_on_chessboard(tmp_pos, right=direction*STORAGE_WIDTH, up=0)
 
             elif i == 2: # add regular black pieces
                 for counter in range(1,9):
                     self.positions[f'sp{counter}'] = [tmp_pos[X] ,tmp_pos[Y], self.table_height] + self.down_orientation
-                    tmp_pos = self.move_on_chessboard(tmp_pos, right=-STORAGE_WIDTH, up=0)
+                    tmp_pos = self.move_on_chessboard(tmp_pos, right=direction*STORAGE_WIDTH, up=0)
 
             else: # i == 3 # add regular white pieces
                 for counter in range(1,9):
                     self.positions[f'sP{counter}'] = [tmp_pos[X] ,tmp_pos[Y], self.table_height] + self.down_orientation
-                    tmp_pos = self.move_on_chessboard(tmp_pos, right=-STORAGE_WIDTH, up=0)
+                    tmp_pos = self.move_on_chessboard(tmp_pos, right=direction*STORAGE_WIDTH, up=0)
 
             # next line        
-            tmp_pos = self.move_on_chessboard(tmp_pos, right=8*STORAGE_WIDTH, up=1*STORAGE_HEIGHT)
+            tmp_pos = self.move_on_chessboard(tmp_pos, right=-direction*8*STORAGE_WIDTH, up=-direction*STORAGE_HEIGHT)
 
     def move_smooth_path___experimental(self, steps, blend_radius=0.03, speed=None, acceleration=None):
         
