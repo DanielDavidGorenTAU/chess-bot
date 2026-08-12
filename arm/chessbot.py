@@ -14,41 +14,19 @@ from typing_extensions import override
 from rtde_control import RTDEControlInterface
 from rtde_receive import RTDEReceiveInterface
 import numpy as np
-from scipy.spatial.transform import Rotation
 import cv2
 import pyzed.sl as sl
 import math
 from common.enums_and_dicts import *
 from common.utils import *
-from typing import Optional
-from main.config import AppConfig
-
 from arm.robotiq_gripper import RobotiqGripper
 from arm.measurements import *
 from arm.abstract_robot_hardware import AbstractRobotHardware
 
-#if __name__ == "__main__":
-#    ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-#    if ROOT_DIR not in sys.path:
-#        sys.path.insert(0, ROOT_DIR)
-        
-#        from robotiq_gripper import RobotiqGripper
-#        from measurements import *
-#        from abstract_robot_hardware import AbstractRobotHardware
-
-#    else:  
-#        from .robotiq_gripper import RobotiqGripper
-#        from .measurements import *
-#        from .abstract_robot_hardware import AbstractRobotHardware
-        
-
-
-
-
 
 clicked_point = None
 point_cloud = sl.Mat()
+
 
 
 def reset_gripper(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT):
@@ -125,21 +103,25 @@ class RobotHardware(AbstractRobotHardware):
         self.rtde_c = None
         self.rtde_r = None
         self.gripper = None
-        self.A1 = A1
-        self.H8 = H8
+        self.A1 = A1 
+        self.H8 = H8 
         self.floor_height = 0
         self.sky_height = 0
         self.safe_height = 0.15
         self.grip_height = {}
         self.table_height = 0
-        self.storage_state = {}
 
     def flip_board_robot_view(self):
-        """ Flips A1 <-> H8 if the we flip the sides and black side is near the camera"""
+        """ 
+        Flips A1 <-> H8 if the we flip the sides and black side is near the camera
+        Inverted_board is TRUE if robot is white, FALSE if player is white 
+        """
         temp = self.A1
         self.A1 = self.H8
         self.H8 = temp
-
+        self.calibrate_board_positions(self.A1, self.H8, Inverted_board=False)
+        self.create_physical_storage_positions(Inverted_board=False)
+        
     @override
     def __enter__(self):
         self.rtde_c = RTDEControlInterface(self.robot_ip)
@@ -151,13 +133,14 @@ class RobotHardware(AbstractRobotHardware):
         time.sleep(0.1)
 
         self.calibrate_board_positions(self.A1, self.H8)
+        self.create_physical_storage_positions() 
 
         if not self.gripper.is_active():
             self.gripper.activate()
         return self
 
-    def calibrate_board_positions(self, a1=None, h8=None):
-       
+    def calibrate_board_positions(self, a1=None, h8=None, Inverted_board=True):
+
         if a1 is None or h8 is None:
             raise Exception("error with a1 and h8 set values")
 
@@ -168,12 +151,26 @@ class RobotHardware(AbstractRobotHardware):
         self.step_right = [(h1[X] - a1[X]) / 7.0, (h1[Y] - a1[Y]) / 7.0]
         self.step_up = [-self.step_right[Y], self.step_right[X]]
 
+        # orientations
         rad = math.atan2(h8[1] - a1[1], h8[0] - a1[0])
-        #self.down_orientation = [0, np.pi, rad-np.pi/4] // backwards board
-        self.down_orientation = [0, np.pi, rad-np.pi/4 + np.pi]
-        self.floor_height = (h8[Z] + a1[Z]) / 2 + 0.0015 # offset
-        self.sky_height = self.floor_height + 0.3
+        extra_angle = np.pi if not Inverted_board else 0
+        self.down_orientation = [0, np.pi, rad-np.pi/4 + extra_angle]
 
+        self.floor_height = (h8[Z] + a1[Z]) / 2 + 0.0015 # offset
+        self.table_height = self.floor_height + OFFSET_TO_TABLE_HEIGHT
+
+        self.sky_height = self.floor_height + 0.3
+        self.safe_height = 0.15 + self.floor_height
+
+        # pieces grip heights
+        self.grip_height[PieceType.QUEEN] = self.floor_height + 0.04
+        self.grip_height[PieceType.PAWN] = self.floor_height + 0.025 # TODO (elad) check for 0.03?
+        self.grip_height[PieceType.KING] = self.floor_height + 0.04
+        self.grip_height[PieceType.ROOK] = self.floor_height + 0.025 # TODO (elad) check for 0.03?
+        self.grip_height[PieceType.KNIGHT] = self.floor_height + 0.03
+        self.grip_height[PieceType.BISHOP] = self.floor_height + 0.03
+
+        # boards positions
         tmp_pos = [a1[X], a1[Y]]
         for row in range(1, 9):
             for col in "abcdefgh":
@@ -182,28 +179,12 @@ class RobotHardware(AbstractRobotHardware):
                 tmp_pos = self.move_on_chessboard(tmp_pos, right=CELL_LENGTH, up=0)
             tmp_pos = self.move_on_chessboard(tmp_pos, right=-8*CELL_LENGTH, up=CELL_LENGTH)
 
-        # rotated board self.start_position = self.move_on_chessboard(self.positions['a5'], right = -CELL_LENGTH/2, up = -CELL_LENGTH/2)
-        self.start_position = self.move_on_chessboard(self.positions['h5'], right = CELL_LENGTH/2, up = CELL_LENGTH/2)
-
-
-        self.start_position[Z] = self.sky_height
-
-        self.grip_height[PieceType.QUEEN] = self.floor_height + 0.04
-        self.grip_height[PieceType.PAWN] = self.floor_height + 0.025 
-        self.grip_height[PieceType.KING] = self.floor_height + 0.04
-        self.grip_height[PieceType.ROOK] = self.floor_height + 0.025
-        self.grip_height[PieceType.KNIGHT] = self.floor_height + 0.03
-        self.grip_height[PieceType.BISHOP] = self.floor_height + 0.03
-
-        self.safe_height = 0.15 + self.floor_height
-        self.table_height = self.floor_height + OFFSET_TO_TABLE_HEIGHT
-
-        #global cube_pose
-        #cube_pose = RobotHardware.modify_pose(self.positions["a8"], dx=-0.02, dy=-0.09, dz=0.09)
-
-        self.create_physical_storage_positions()    
+        if not Inverted_board:
+            self.start_position = self.move_on_chessboard(self.positions['a5'], right = -CELL_LENGTH/2, up = -CELL_LENGTH/2)
+        else:
+            self.start_position = self.move_on_chessboard(self.positions['h4'], right = CELL_LENGTH/2, up = CELL_LENGTH/2)
+        self.start_position[Z] = self.sky_height           
         
-
     @override
     def __exit__(self, exc_type, exc_value, traceback):
         try:
@@ -251,10 +232,13 @@ class RobotHardware(AbstractRobotHardware):
     def get_gripper(self):
         return self.gripper.get_current_position()
 
-    def create_physical_storage_positions(self, storage_start = None):
+    def create_physical_storage_positions(self, storage_start = None, Inverted_board=True):
+        
         if storage_start == None:
-            #storage_start = self.move_on_chessboard(self.positions['a1'], right=-0.4*CELL_LENGTH, up=-2.5*CELL_LENGTH)
-            storage_start = self.move_on_chessboard(self.positions['h8'], right=0.4*CELL_LENGTH, up=2.5*CELL_LENGTH)
+            if not Inverted_board:
+                storage_start = self.move_on_chessboard(self.positions['a1'], right=-0.4*CELL_LENGTH, up=-2.5*CELL_LENGTH)
+            else:
+                storage_start = self.move_on_chessboard(self.positions['h8'], right=0.4*CELL_LENGTH, up=2.5*CELL_LENGTH)
 
         STORAGE_WIDTH = 5.3
         STORAGE_HEIGHT = 5
@@ -290,7 +274,7 @@ class RobotHardware(AbstractRobotHardware):
 
             # next line        
             tmp_pos = self.move_on_chessboard(tmp_pos, right=8*STORAGE_WIDTH, up=1*STORAGE_HEIGHT)
-            
+
     def move_smooth_path___experimental(self, steps, blend_radius=0.03, speed=None, acceleration=None):
         
         if speed is None:
@@ -701,7 +685,7 @@ def get_head_camera_point():
     #head_robot[Y]-=0.01
     #head_robot[X]+=0.01
 
-    return head_robot
+    return head_robot.tolist()
 
 
 
@@ -737,8 +721,8 @@ def main():
         #print("point:", point)
         #print("type:", type(point))
 
-        #print(robot.normalize_pos(point.tolist()))
-        #robot.move_to(robot.normalize_pos(get_head_camera_point().tolist()))
+        #print(robot.normalize_pos(point))
+        #robot.move_to(robot.normalize_pos(get_head_camera_point()))
 
         #robot.pick_up_dead_piece(PieceType.PAWN, "lying", "c1")
         robot.move_to(cube_pose, dz = 0.11)
@@ -789,7 +773,7 @@ if __name__ == "__main__":
 
 
 
-
+    #robot.move_to(robot.normalize_pos(get_head_camera_point()))
     #robot.mov_chess_piece(PieceType.PAWN, "b1", "c3")
     #robot.move_and_capture_piece((PieceType.PAWN, "b2"), (PieceType.QUEEN,"c3"))
     #robot.pick_up_dead_piece(PieceType.QUEEN, "lying", "c1")
