@@ -1,27 +1,70 @@
+import argparse
 import os
+import sys
+import tempfile
 import cv2
 import numpy as np
 from pathlib import Path
+from typing import Optional, Union
 from ultralytics import YOLO
 
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
+from ZED.cameralib import Camera
+from ZED.crop_images import crop_carton_roi
+
+
+
+
+def capture_frame_from_camera(camera_index: int = 0, warmup_frames: int = 10) -> np.ndarray:
+    # ZED Camera does not use a CV2 device index like a webcam.
+    with Camera() as camera:
+        with tempfile.TemporaryDirectory(prefix="yolo_pose_camera_") as tmpdir:
+            image_path = camera.take_photo(tmpdir)
+            frame = cv2.imread(image_path)
+
+    if frame is None:
+        raise RuntimeError("Failed to capture frame from ZED camera")
+
+    frame = crop_carton_roi(frame)
+
+    if np.mean(frame[:, :, 0]) == 0 and np.mean(frame[:, :, 2]) == 0:
+        raise RuntimeError("Captured camera frame appears invalid (single green channel).")
+
+    return frame
+
+
 def annotate_and_save(
-    image_path: str,
+    image_source: Union[str, np.ndarray],
     output_dir: str,
     model_path: str = "runs/train/chess_board_dense_pose/weights/best.pt",
-    conf_threshold: float = 0.25
+    conf_threshold: float = 0.25,
+    image_name: Optional[str] = None,
 ):
     """
-    Runs YOLOv11 Pose prediction on an image and saves an annotated version with:
-    1. Bounding boxes around each piece (no text on boxes).
+    Runs YOLOv11 Pose prediction on a still image or camera frame and saves an annotated version with:
+    1. Bounding boxes around each piece.
     2. Head and Base keypoints connected by a line.
     3. A clean summary label menu at the bottom panel.
     """
     model = YOLO(model_path)
 
-    if not os.path.exists(image_path):
-        raise FileNotFoundError(f"Image not found at: {image_path}")
-    
-    image = cv2.imread(image_path)
+    if isinstance(image_source, str):
+        image_path = image_source
+        if not os.path.exists(image_path):
+            raise FileNotFoundError(f"Image not found at: {image_path}")
+        image = cv2.imread(image_path)
+        image_name = Path(image_path).name
+    else:
+        image = image_source
+        if image_name is None:
+            image_name = "camera_frame.png"
+
+    if image is None:
+        raise RuntimeError("Failed to load image for annotation.")
+
     img_h, img_w, _ = image.shape
 
     # Run inference
@@ -32,7 +75,7 @@ def annotate_and_save(
         0: (0, 0, 255),    # Red for Lying
         1: (0, 255, 0)     # Green for Standing
     }
-    
+
     KP_COLOR_HEAD = (255, 255, 0)   # Cyan for Head
     KP_COLOR_BASE = (255, 0, 255)   # Magenta for Base
     KP_LINE_COLOR = (0, 215, 255)   # Yellow/Orange connecting line
@@ -54,37 +97,30 @@ def annotate_and_save(
 
             # --- B. Keypoints (Head & Base) ---
             if keypoints is not None and len(keypoints) > i:
-                # Use keypoints.xy to get REAL PIXEL coordinates (not normalized 0-1)
-                kpts_xy = keypoints.xy[i].cpu().numpy()  # shape: (2, 2)
-                
-                # Get keypoint confidences if available
+                kpts_xy = keypoints.xy[i].cpu().numpy()
                 if keypoints.conf is not None:
-                    kpts_conf = keypoints.conf[i].cpu().numpy()  # shape: (2,)
+                    kpts_conf = keypoints.conf[i].cpu().numpy()
                 else:
                     kpts_conf = [1.0, 1.0]
 
                 if len(kpts_xy) >= 2:
                     head_x, head_y = int(kpts_xy[0][0]), int(kpts_xy[0][1])
                     base_x, base_y = int(kpts_xy[1][0]), int(kpts_xy[1][1])
-                    
+
                     head_conf = kpts_conf[0]
                     base_conf = kpts_conf[1]
 
-                    # 1. Connecting Line
                     if head_x > 0 and base_x > 0:
                         cv2.line(image, (head_x, head_y), (base_x, base_y), KP_LINE_COLOR, 2, cv2.LINE_AA)
 
-                    # 2. Draw Head (Cyan dot with black outline for visibility)
                     if head_x > 0 and head_conf >= 0.1:
-                        cv2.circle(image, (head_x, head_y), 5, (0, 0, 0), -1, cv2.LINE_AA)        # Black outer
-                        cv2.circle(image, (head_x, head_y), 4, KP_COLOR_HEAD, -1, cv2.LINE_AA)  # Cyan inner
+                        cv2.circle(image, (head_x, head_y), 5, (0, 0, 0), -1, cv2.LINE_AA)
+                        cv2.circle(image, (head_x, head_y), 4, KP_COLOR_HEAD, -1, cv2.LINE_AA)
 
-                    # 3. Draw Base (Magenta dot with black outline for visibility)
                     if base_x > 0 and base_conf >= 0.1:
-                        cv2.circle(image, (base_x, base_y), 5, (0, 0, 0), -1, cv2.LINE_AA)        # Black outer
-                        cv2.circle(image, (base_x, base_y), 4, KP_COLOR_BASE, -1, cv2.LINE_AA)  # Magenta inner
+                        cv2.circle(image, (base_x, base_y), 5, (0, 0, 0), -1, cv2.LINE_AA)
+                        cv2.circle(image, (base_x, base_y), 4, KP_COLOR_BASE, -1, cv2.LINE_AA)
 
-    # --- C. Create Bottom Menu Panel ---
     banner_height = 50
     banner = np.zeros((banner_height, img_w, 3), dtype=np.uint8)
 
@@ -96,40 +132,55 @@ def annotate_and_save(
     font_scale = 0.55
     thickness = 2
 
-    # Piece counts
     cv2.putText(banner, f"Total: {total_pieces}", (15, 30), font, font_scale, (255, 255, 255), thickness)
-
     cv2.rectangle(banner, (150, 15), (165, 30), CLASS_COLORS[1], -1)
     cv2.putText(banner, f"Standing: {standing_count}", (175, 30), font, font_scale, (255, 255, 255), thickness)
-
     cv2.rectangle(banner, (330, 15), (345, 30), CLASS_COLORS[0], -1)
     cv2.putText(banner, f"Lying: {lying_count}", (355, 30), font, font_scale, (255, 255, 255), thickness)
-
-    # Keypoint legend
     cv2.circle(banner, (500, 22), 5, KP_COLOR_HEAD, -1)
     cv2.putText(banner, "Head", (512, 28), font, 0.45, (255, 255, 255), 1)
-
     cv2.circle(banner, (580, 22), 5, KP_COLOR_BASE, -1)
     cv2.putText(banner, "Base", (592, 28), font, 0.45, (255, 255, 255), 1)
 
     final_image = np.vstack((image, banner))
 
     os.makedirs(output_dir, exist_ok=True)
-    img_name = Path(image_path).name
-    save_path = os.path.join(output_dir, f"labeled_{img_name}")
+    save_path = os.path.join(output_dir, f"labeled_{Path(image_name).name}")
 
     cv2.imwrite(save_path, final_image)
     print(f"✅ Prediction saved to: {save_path}")
 
 
 if __name__ == "__main__":
-    IMAGE_PATH = "/home/checkmate/Downloads/data_set_carton/tests/img_161_extra.png"
-    OUTPUT_DIR = "/home/checkmate/Documents/chess-bot/yolo/predictions"
-    MODEL_WEIGHTS = "/home/checkmate/Documents/chess-bot/runs/pose/runs/pose_train/chess_board-2/weights/best.pt"
+    parser = argparse.ArgumentParser(description="Run YOLO pose inference on an image or camera frame.")
+    parser.add_argument("--image_path", default="/home/checkmate/Downloads/data_set_carton/tests/img_161_extra.png",
+                        help="Path to the input image.")
+    parser.add_argument("--output_dir", default="/home/checkmate/Documents/chess-bot/yolo/predictions",
+                        help="Directory to save the annotated output.")
+    parser.add_argument("--model_path", default="/home/checkmate/Documents/chess-bot/runs/pose/runs/pose_train/chess_board-2/weights/best.pt",
+                        help="Path to the YOLO pose model weights.")
+    parser.add_argument("--conf_threshold", type=float, default=0.25,
+                        help="Confidence threshold for prediction.")
+    parser.add_argument("--use_camera", action="store_true",
+                        help="Capture a single frame from the default camera instead of using an image file.")
+    parser.add_argument("--camera_index", type=int, default=0,
+                        help="Camera device index to use when --use_camera is enabled.")
 
-    annotate_and_save(
-        image_path=IMAGE_PATH,
-        output_dir=OUTPUT_DIR,
-        model_path=MODEL_WEIGHTS,
-        conf_threshold=0.25
-    )
+    args = parser.parse_args()
+
+    if args.use_camera:
+        frame = capture_frame_from_camera(args.camera_index)
+        annotate_and_save(
+            frame,
+            args.output_dir,
+            model_path=args.model_path,
+            conf_threshold=args.conf_threshold,
+            image_name=f"camera_{args.camera_index}.png"
+        )
+    else:
+        annotate_and_save(
+            args.image_path,
+            args.output_dir,
+            model_path=args.model_path,
+            conf_threshold=args.conf_threshold
+        )
