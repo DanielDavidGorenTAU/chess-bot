@@ -33,18 +33,16 @@ class BoardSettingArm(BoardSettingRobot):
     def __init__(self, robot_hardware: RobotHardware):
         self.robot_hardware = robot_hardware
 
-    def move_piece_to_platform(self, head_pos: Pos, base_pos: Pos, orientation) -> bool:
+    def move_piece_to_platform(self, head_pos: Pos, base_pos: Pos, orientation: Orientation) -> bool:
         # translate to robot coordinates
-        head_pos = self.robot_hardware.camera_vector_to_robot_vector(head_pos)
-        base_pos = self.robot_hardware.camera_vector_to_robot_vector(base_pos)
-        #head_pos = self.robot_hardware.normalize_pos(head_pos)
-        #base_pos = self.robot_hardware.normalize_pos(base_pos)
+        head_pos = self.robot_hardware.normalize_pos(head_pos)
+        base_pos = self.robot_hardware.normalize_pos(base_pos)
 
         dx, dy, dz = [head_pos[i] - base_pos[i] for i in range(3)]
         drz = math.degrees(math.atan2(dx, dy))
-        elevation = math.degrees(math.atan2(dz, math.hypot(dx, dy)))
-        is_standing = (45.0 < elevation < 135.0)
-        is_standing = True if orientation == Orientation.STANDING else False
+        #elevation = math.degrees(math.atan2(dz, math.hypot(dx, dy)))
+        #is_standing = (45.0 < elevation < 135.0)
+        is_standing = (orientation == Orientation.STANDING)
         HEAD_BIAS = 0.6
         pickup_pos = weighted_avg(head_pos[:3], base_pos[:3], HEAD_BIAS)
         if is_standing:

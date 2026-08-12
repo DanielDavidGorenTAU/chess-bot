@@ -114,13 +114,11 @@ class RobotHardware(AbstractRobotHardware):
     def flip_board_robot_view(self):
         """ 
         Flips A1 <-> H8 if the we flip the sides and black side is near the camera
-        Inverted_board is TRUE if robot is white, FALSE if player is white 
+        inverted_board is TRUE if robot is white, FALSE if player is white 
         """
-        temp = self.A1
-        self.A1 = self.H8
-        self.H8 = temp
-        self.calibrate_board_positions(self.A1, self.H8, Inverted_board=False)
-        self.create_physical_storage_positions(Inverted_board=False)
+        self.A1, self.H8 = self.H8, self.A1
+        self.calibrate_board_positions(self.A1, self.H8, inverted_board=False)
+        self.create_physical_storage_positions(inverted_board=False)
         
     @override
     def __enter__(self):
@@ -139,7 +137,7 @@ class RobotHardware(AbstractRobotHardware):
             self.gripper.activate()
         return self
 
-    def calibrate_board_positions(self, a1=None, h8=None, Inverted_board=True):
+    def calibrate_board_positions(self, a1=None, h8=None, inverted_board=True):
 
         if a1 is None or h8 is None:
             raise Exception("error with a1 and h8 set values")
@@ -153,7 +151,7 @@ class RobotHardware(AbstractRobotHardware):
 
         # orientations
         rad = math.atan2(h8[1] - a1[1], h8[0] - a1[0])
-        extra_angle = np.pi if not Inverted_board else 0
+        extra_angle = np.pi if inverted_board else 0
         self.down_orientation = [0, np.pi, rad-np.pi/4 + extra_angle]
 
         self.floor_height = (h8[Z] + a1[Z]) / 2 + 0.0015 # offset
@@ -179,7 +177,7 @@ class RobotHardware(AbstractRobotHardware):
                 tmp_pos = self.move_on_chessboard(tmp_pos, right=CELL_LENGTH, up=0)
             tmp_pos = self.move_on_chessboard(tmp_pos, right=-8*CELL_LENGTH, up=CELL_LENGTH)
 
-        if not Inverted_board:
+        if not inverted_board:
             self.start_position = self.move_on_chessboard(self.positions['a5'], right = -CELL_LENGTH/2, up = -CELL_LENGTH/2)
         else:
             self.start_position = self.move_on_chessboard(self.positions['h4'], right = CELL_LENGTH/2, up = CELL_LENGTH/2)
@@ -232,13 +230,13 @@ class RobotHardware(AbstractRobotHardware):
     def get_gripper(self):
         return self.gripper.get_current_position()
 
-    def create_physical_storage_positions(self, storage_start = None, Inverted_board=True):
+    def create_physical_storage_positions(self, storage_start = None, inverted_board=True):
         
         if storage_start == None:
-            if not Inverted_board:
-                storage_start = self.move_on_chessboard(self.positions['a1'], right=-0.4*CELL_LENGTH, up=-2.5*CELL_LENGTH)
-            else:
+            if inverted_board:
                 storage_start = self.move_on_chessboard(self.positions['h8'], right=0.4*CELL_LENGTH, up=2.5*CELL_LENGTH)
+            else:
+                storage_start = self.move_on_chessboard(self.positions['a1'], right=-0.4*CELL_LENGTH, up=-2.5*CELL_LENGTH)
 
         STORAGE_WIDTH = 5.3
         STORAGE_HEIGHT = 5

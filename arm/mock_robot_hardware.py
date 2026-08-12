@@ -1,4 +1,8 @@
-from typing import override, Optional
+try:
+    from typing import override, Optional
+except:
+    override = lambda f: f
+
 from math import atan2, pi
 from io import TextIOBase
 from .abstract_robot_hardware import AbstractRobotHardware
