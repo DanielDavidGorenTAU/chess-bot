@@ -1,3 +1,4 @@
+import chess
 from .player import Player
 
 DEFAULT_STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -5,9 +6,10 @@ DEFAULT_STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 class Game:
     def __init__(self, white_player: Player, black_player: Player, fen: str = DEFAULT_STARTING_FEN):
         self.players = [black_player, white_player]
-        self.fen: str = fen
+        self.init_fen: str = fen
         self.turn: int = self._extract_turn_from_fen(fen) # 1 for white, 0 for black
         self.is_running: bool = False
+        self.board : chess.Board = chess.Board(self.init_fen.strip())
 
     def _extract_turn_from_fen(self, fen_string: str) -> int:
         """
@@ -23,11 +25,22 @@ class Game:
         """Starts the game loop or marks the game as active."""
         self.is_running = True
         current_turn_name = "White" if self.turn == 1 else "Black"
-        print(f"Game started! Initial FEN: {self.fen}")
+        print(f"Game started! Initial FEN: {self.init_fen}")
         print(f"Active turn: {current_turn_name} ({self.turn})")
         while self.is_running:
+            if self.board.is_checkmate():
+                # The side to move is checkmated, so the other side wins
+                winner = not self.board.turn
+                print("Checkmate!")
+                print("Winner:", "White" if winner == chess.WHITE else "Black")
+                break
+
+            elif self.board.is_stalemate():
+                print("Stalemate! Draw.")
+                break
+
             cur_player = self.players[self.turn]
-            self.fen = cur_player.make_move(self.fen)
+            cur_player.make_move(self.board)
             self.turn = 1 - self.turn
 
 

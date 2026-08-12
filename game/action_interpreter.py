@@ -1,3 +1,4 @@
+from chess import Board
 from .actions import *
 from common.utils import *
 class ActionFactory():
@@ -23,11 +24,11 @@ class ActionFactory():
         return from_sq, to_sq, promotion
 
 
-    def interpret_action(self, move: str, fen: str) -> ChessAction:
+    def interpret_action(self, move: str, board: Board) -> ChessAction:
         from_sq, to_sq, promo_char = self._parse_move(move)
         from_r, from_c = convert_square_to_coordinates(from_sq)
         to_r, to_c = convert_square_to_coordinates(to_sq)
-        grid, turn = parse_fen_to_int_grid(fen)
+        grid, turn = parse_board_to_int_grid(board)
 
         from_val = grid[from_r][from_c]
         to_val = grid[to_r][to_c]

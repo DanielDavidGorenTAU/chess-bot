@@ -12,17 +12,12 @@ ENGINE_PATH = (
 ENGINE_PATH = "/usr/games/stockfish" # TODO check for permenant path in linux
 
 class ChessEngine:
-    def choose_move(self, fen: str, engine_path=ENGINE_PATH) -> str:
+    
+    def _engine_make_move(self, board: chess.Board, engine_path=ENGINE_PATH) -> str:
         """
         Uses real chess engine to decide on move based on current board FEN string
         Returns move in UCI format e.g "e2e4", "e7e8q"
         """
-        # Handle cases where only the board layout is provided
-        try:
-            board = chess.Board(fen.strip())
-        except ValueError:
-            board = chess.Board(fen.strip() + " w - - 0 1")
-
         # Open the engine, find the move, and safely close the engine
         with chess.engine.SimpleEngine.popen_uci(engine_path) as engine:
             # --- -------------------------
@@ -39,6 +34,22 @@ class ChessEngine:
             
         return ""
 
+    def choose_move(self, board: chess.Board, engine_path=ENGINE_PATH) -> str:
+        return self._engine_make_move(board, engine_path=engine_path)
+
+
+    def choose_move_fen(self, fen: str, engine_path=ENGINE_PATH) -> str:
+
+        # Handle cases where only the board layout is provided
+        try:
+            board = chess.Board(fen.strip())
+        except ValueError:
+            board = chess.Board(fen.strip() + " w - - 0 1")
+
+        return self._engine_make_move(board, engine_path=engine_path)
+
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Get the optimal chess move from a FEN string")
     parser.add_argument("--test", action="store_true", help="Run the test suite")
@@ -48,7 +59,7 @@ if __name__ == "__main__":
 
     # If a FEN is passed directly via terminal
     if args.fen:
-        best_move = ChessEngine.choose_move(args.fen)
+        best_move = ChessEngine.choose_move_fen(args.fen)
         print(best_move)
         
     # If the --test flag is passed
@@ -86,7 +97,7 @@ if __name__ == "__main__":
             print(f"FEN: {test['fen']}")
             
             try:
-                move = engine.choose_move(test['fen'])
+                move = engine.choose_move_fen(test['fen'])
                 print(f"Engine played: {move}")
                 
                 if test['expected']:
