@@ -221,3 +221,15 @@ zed_board_images_3.tar.gz
 yolo/predictions/
 yolo11n.pt
 yolo26n.pt
+zed_platform_images_cropped/
+zed_platform_test_cropped/
+runs/
+test_yolo_board/
+yolo/photos_game/
+yolo/game_photos/
+yolo/predictions_game
+ZED/zed_board_images_3/
+zed_board_images_[0-9]/
+zed_platform_[0-9]/
+zed_platform_images/
+zed_platform_images_[0-9]/
