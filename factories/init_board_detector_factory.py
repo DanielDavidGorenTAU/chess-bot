@@ -17,7 +17,7 @@ class InitDetectorFactory:
         """Assembles Vision + Translator pipeline."""
         print("[Factory] Assembling InitBoardDetector...")
         flip = self.config.game.white_player == "human"
-        yolo_model = BoardPiecesDetector(model_name=ADVANCED, camera=self.camera)
+        yolo_model = BoardPiecesDetector(model_name=ADVANCED, camera=self.camera, optimize=True)
         translator = AdvancedToFenTranslator(flip=flip)
         return HumanMoveController(yolo_model=yolo_model, translator=translator)
 

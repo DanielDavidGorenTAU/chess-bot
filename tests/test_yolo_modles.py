@@ -11,10 +11,10 @@ from yolo.board_pieces_detector import BoardPiecesDetector
 from ZED.cameralib import Camera
 
 if __name__ == "__main__":
-    image_path = "/home/checkmate/Documents/chess-bot/yolo/game_photos/00_20260806_125747_340.png"
+    image_path = "/home/checkmate/Documents/chess-bot/yolo/photos_game/00_20260813_194939_aaa.png"
     with Camera() as camera:
-        yolo_model = BoardPiecesDetector(model_name="binary", camera=camera, save_regularly=False)
-        yolo_model.predict()
+        yolo_model = BoardPiecesDetector(model_name="advanced", camera=camera, save_regularly=False, optimize = True)
+        yolo_model.predict(image_path)
         
 
     

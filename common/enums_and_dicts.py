@@ -76,6 +76,14 @@ COLOR_TO_INT = {
     "black": 0,
     "white": 1
 }
+MAX_LIMITS = {
+    'king': 1,
+    'queen': 1, 
+    'knight': 2,
+    'rook': 2,
+    'bishop': 2,
+    'pawn': 8
+}
 
 class Orientation(IntEnum):
     """Enum representing the orientation state of a piece using integers."""
