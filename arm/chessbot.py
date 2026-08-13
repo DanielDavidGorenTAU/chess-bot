@@ -95,7 +95,7 @@ def print_joints():
 
 
 class RobotHardware(AbstractRobotHardware):
-    def __init__(self, robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, speed=0.5, acceleration=0.5, A1 = A1_, H8 = H8_, log: TextIOBase = None):
+    def __init__(self, robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, speed=0.5, acceleration=0.5, A1 = A1_, H8 = H8_, flip=False, log: TextIOBase = None):
         super().__init__(log=log)
         self.robot_ip = robot_ip
         self.base_tcp_port = base_tcp_port
@@ -111,22 +111,19 @@ class RobotHardware(AbstractRobotHardware):
         self.safe_height = 0.15
         self.grip_height = {}
         self.table_height = 0
+        self.flip = flip
 
+    """
     def flip_board_robot_view(self):
-        """ 
+        
         Flips A1 <-> H8 if the we flip the sides and black side is near the camera
         flip is False if robot is white, True if player is white 
-        """
+    
         self.A1, self.H8 = self.H8, self.A1
         self.calibrate_board_positions(self.A1, self.H8, flip=True)
         self.create_physical_storage_positions(flip=True)
-        print("flipped!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11")
-        print("flipped!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11")
-        print("flipped!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11")
-        print("flipped!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11")
-        print("flipped!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11")
-        print("flipped!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!11")
-        
+    """
+
     @override
     def __enter__(self):
         self.rtde_c = RTDEControlInterface(self.robot_ip)
@@ -137,8 +134,11 @@ class RobotHardware(AbstractRobotHardware):
 
         time.sleep(0.1)
 
-        self.calibrate_board_positions(self.A1, self.H8)
-        self.create_physical_storage_positions() 
+        if self.flip:
+            self.A1, self.H8 = self.H8, self.A1
+
+        self.calibrate_board_positions(self.A1, self.H8, flip=self.flip)
+        self.create_physical_storage_positions(flip=self.flip)
         
 
         if not self.gripper.is_active():
@@ -149,7 +149,6 @@ class RobotHardware(AbstractRobotHardware):
 
         if a1 is None or h8 is None:
             raise Exception("error with a1 and h8 set values")
-        print(a1)
         dx = h8[X] - a1[X]
         dy = h8[Y] - a1[Y]
         h1 = [a1[X] + (dx + dy) / 2.0, a1[Y] + (dy - dx) / 2.0]
@@ -178,20 +177,19 @@ class RobotHardware(AbstractRobotHardware):
 
         # boards positions
         tmp_pos = [a1[X], a1[Y]]
-        print(tmp_pos)
         for row in range(1, 9):
             for col in "abcdefgh":
                 square = f"{col}{row}"
                 self.positions[square] = tmp_pos + [self.floor_height] + self.down_orientation
                 tmp_pos = self.move_on_chessboard(tmp_pos, right=CELL_LENGTH, up=0)
             tmp_pos = self.move_on_chessboard(tmp_pos, right=-8*CELL_LENGTH, up=CELL_LENGTH)
-        print(self.positions['a1'])
         if not flip:
             self.start_position = self.move_on_chessboard(self.positions['h5'], right = CELL_LENGTH/2, up = -CELL_LENGTH/2)
         else:
             self.start_position = self.move_on_chessboard(self.positions['a4'], right = -CELL_LENGTH/2, up = CELL_LENGTH/2)
-        self.start_position[Z] = self.sky_height 
-        print(self.positions['a1'])   
+        self.start_position[Z] = self.sky_height   
+
+        print(self.positions['a1'])
         
     @override
     def __exit__(self, exc_type, exc_value, traceback):

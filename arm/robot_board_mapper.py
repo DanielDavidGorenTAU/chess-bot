@@ -89,10 +89,6 @@ class RobotBoardMapper:
         square_name = square_name.lower()
         logical_col = ord(square_name[0]) - ord('a')
         logical_row = 8 - int(square_name[1])
-        
-        # Input validation
-        if not (0 <= row <= 7 and 0 <= col <= 7):
-            raise Exception(f"Error: Invalid square name {square_name}")
 
         if self.flip:
             col = 7 - logical_col
@@ -100,6 +96,10 @@ class RobotBoardMapper:
         else:
             col = logical_col
             row = logical_row
+
+        # Input validation
+        if not (0 <= row <= 7 and 0 <= col <= 7):
+            raise Exception(f"Error: Invalid square name {square_name}")
 
         # Calculate the theoretical center of the square in millimeters
         theoretical_x = (col * self.cell_size_mm) + (self.cell_size_mm / 2.0)

@@ -6,7 +6,7 @@ from main.config import AppConfig
 from .StorageManager import StorageManager
 from .robot_board_mapper import RobotBoardMapper
 import math
-from perception_state import PerceptionState
+from .perception_state import PerceptionState
 
 class PlayingRobot(ABC):
 
@@ -56,8 +56,50 @@ class PlayingArm(PlayingRobot):
         if self.human_color == "white": # flip the board
             self.board_mapper.flip = True
     
-
     def _move_piece(self, type=None, start_pos=None, end_pos=None, speed=None, acceleration=None, rz_rotation_start=None, rz_rotation_end=None, move_to_start=True):
+        """
+        Private method for moving a piece, using the hardware class
+        """
+        robot = self.robot_hardware
+        #dx, dy = self.board_mapper.get_piece_grasping_data(start_pos)
+
+        if speed is None:
+            speed = robot.speed
+        if acceleration is None:
+            acceleration = robot.acceleration
+        if robot.pose[Z] < robot.safe_height:
+            robot.move_to(z=robot.safe_height)
+
+        # update chess board locations
+        start_pos = robot.normalize_pos(start_pos)
+        end_pos = robot.normalize_pos(end_pos)
+        if rz_rotation_start is not None:
+            start_pos[3:6] = robot.get_rotated_tcp_orientation(start_pos,Rz=rz_rotation_start)
+        if rz_rotation_end is not None:
+            end_pos[3:6] = robot.get_rotated_tcp_orientation(end_pos,Rz=rz_rotation_end)
+
+        robot.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET,wait=False) #  open the gripper
+
+        # move to first spot
+        robot.move_to(start_pos, z=robot.safe_height, speed=speed, acceleration=acceleration) 
+
+        # grip the piece
+        robot.move_to(z=robot.grip_height[type])
+        robot.set_gripper(CLOSED) 
+        robot.move_to(z=robot.safe_height)
+
+        # move to end spot
+        robot.move_to(end_pos, z=robot.safe_height, speed=speed, acceleration=acceleration)
+        robot.move_to(z=robot.grip_height[type] + GRIP_RELEASE_HEIGHT)
+        
+        robot.set_gripper(robot.get_gripper() - GRIP_RELEASE_OFFSET) # release the piece
+        
+        # return to start postion
+        robot.move_to(z=robot.safe_height)
+        if move_to_start:
+            robot.move_to(robot.start_position, z=robot.sky_height, speed=speed, acceleration=acceleration)
+
+    def _move_piece_1(self, type=None, start_pos=None, end_pos=None, speed=None, acceleration=None, rz_rotation_start=None, rz_rotation_end=None, move_to_start=True):
         """
         Private method for moving a piece, using the hardware class
         """
@@ -71,9 +113,14 @@ class PlayingArm(PlayingRobot):
         # --- APPLY HEIGHT SAFTEY ---
         if robot.pose[Z] < robot.safe_height:
             robot.move_to(z=robot.safe_height)
-
+        print('000000000000000000000000000000000000000000000000000000')
+        print('000000000000000000000000000000000000000000000000000000')
+        print('000000000000000000000000000000000000000000000000000000')
         # get chess board deviations 
         dx, dy = self.board_mapper.get_piece_grasping_data(square_name=start_pos)
+        print('11111111111111111111111111111111111111111111111111111')
+        print('11111111111111111111111111111111111111111111111111111')
+        print('11111111111111111111111111111111111111111111111111111')
 
         # --- GET PHYSICAL POSITIONS ---
         start_pos = robot.normalize_pos(start_pos)
@@ -300,7 +347,7 @@ class PlayingArm(PlayingRobot):
         """
         Private method for remove a piece, using the hardware class
         """
-        robot = self.robot_hardwar
+        robot = self.robot_hardware
 
         if speed is None:
             speed = robot.speed
