@@ -1,5 +1,5 @@
 import chess
-from .board_pieces_detector import BoardPiecesDetector
+from .board_pieces_detector import BoardPiecesDetector, AbsBoardDetector
 from .fen_translator import Translator, BinaryToFenTranslator
 from arm.StorageManager import StorageManager
 from common.utils import convert_fen_char_to_type_and_color
@@ -13,11 +13,19 @@ class HumanMoveController:
     to compute updated board after a human player makes a move.
     """
 
-    def __init__(self, yolo_model: BoardPiecesDetector, translator: Optional[Translator] = None):
-        self.yolo_model: BoardPiecesDetector = yolo_model
+    def __init__(self, yolo_model: AbsBoardDetector, translator: Optional[Translator] = None):
+        self.yolo_model: AbsBoardDetector = yolo_model
         # Default to BinaryToFenTranslator if none is supplied
         self.translator: Translator = translator or BinaryToFenTranslator()
         self.storage = StorageManager() # Singleton
+
+    def detect_initial_board(self, turn = "w",  image_path: Optional[str] = None) -> str:
+        detections_file = self.yolo_model.predict(image_path=image_path)
+        PerceptionState().set_latest_detections(detections_file)
+        fen = self.translator.translate_to_fen("", detections_file)
+        ##TODO: sync storage
+        return fen
+
 
     def update_fen(self, board: chess.Board, image_path: Optional[str] = None) -> str:
         """
@@ -32,6 +40,7 @@ class HumanMoveController:
         detections_file = self.yolo_model.predict(image_path=image_path)
         PerceptionState().set_latest_detections(detections_file)
         move_str = self.translator.translate_to_move(board, detections_file)
+        print(f"Human Move: {move_str}")
         chess_move =  chess.Move.from_uci(move_str)
         board.push(chess_move)
         new_fen = board.fen()

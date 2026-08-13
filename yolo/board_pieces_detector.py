@@ -6,6 +6,7 @@ from .vision_model import VisionModel
 import cv2
 import random
 from pathlib import Path
+from abc import ABC, abstractmethod
 #from common.utils import ensure_directories
 
 BINARY = "binary"
@@ -26,10 +27,16 @@ PREDICTION_OUTPUT_DIR = "/home/checkmate/Documents/chess-bot/yolo/predictions_ga
 IMAGE_OUTPUT_DIR = "/home/checkmate/Documents/chess-bot/yolo/photos_game"
 
 
+class AbsBoardDetector(VisionModel):
+    def __init__(self, camera: Optional[Camera] = None, conf: float = 0.25, path_list = None):
+        super().__init__(camera=camera, conf=conf, path_list=path_list)
+
+    @abstractmethod
+    def predict(self, image_path: Optional[str] = None)-> str:
+        pass
 
 
-
-class BoardPiecesDetector(VisionModel):
+class BoardPiecesDetector(AbsBoardDetector):
     """
     Wrapper class for loading and running predictions with Ultralytics YOLO models.
     """
@@ -177,5 +184,15 @@ class BoardPiecesDetector(VisionModel):
         else:
             result.save(filename=output_image)
         return txt_path  # Return the path to the saved coordinates file for further processing
+
+class MockBoardDetector(AbsBoardDetector):
+    def __init__(self, camera: Optional[Camera] = None, conf: float = 0.25, path_list = None):
+        super().__init__(camera=camera, conf=conf, path_list=path_list)
+
+    def predict(self, image_path: Optional[str] = None)-> str:
+        if image_path is None or not Path(image_path).is_file():
+            raise FileNotFoundError("The image files does not exists")
+        return image_path
+            
     
         

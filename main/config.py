@@ -32,6 +32,7 @@ class VisionConfig:
 @dataclass
 class GameSetupConfig:
     run_board_setup: bool = False
+    run_initial_detection: bool = True
     white_player: str = "human"
     black_player: str = "robot"
     white_name: str = "Human Player"

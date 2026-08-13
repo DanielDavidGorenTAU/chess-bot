@@ -10,7 +10,10 @@ class Game:
         self.turn: int = self._extract_turn_from_fen(fen) # 1 for white, 0 for black
         self.is_running: bool = False
         self.board : chess.Board = chess.Board(self.init_fen.strip())
-
+    def set_fen(self, fen:str):
+        self.init_fen = fen.strip()
+        self.board = chess.Board(self.init_fen)
+        
     def _extract_turn_from_fen(self, fen_string: str) -> int:
         """
         Extracts active turn from FEN string:

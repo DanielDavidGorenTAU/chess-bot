@@ -50,32 +50,10 @@ class Translator(ABC):
 
         return row, col
 
-
-    @abstractmethod
-    def translate_to_fen(self, old_fen: str, detections_file: str) -> str:
-        """
-        Given an old FEN and a labels file, translates the detected pieces into a new FEN string.
-        """
-        pass
-
-    @abstractmethod
-    def translate_to_move(self, board: chess.Board, detections_file: str):
-        """
-        Given an old board and a labels file, translates the detected pieces into a move UCI string.
-        """
-        pass        
-
-
-
-class BinaryToFenTranslator(Translator):
-
-    def __init__(self, flip: bool):
-        super.__init__(flip)
-
     def _create_detected_grid(self, detections_file, corners_file, target_size=800):
         """
         Creates an 8x8 color occupancy grid.
-        Values: -1 = empty, 0 = black, 1 = white
+        Values: -1 = empty, others based on class or color
         """
         with open(corners_file, "r") as f:
             corners = json.load(f)
@@ -95,16 +73,68 @@ class BinaryToFenTranslator(Translator):
                 if len(parts) < 3:
                     continue
                 
-                label = parts[0].lower()  # Expected: 'white' or 'black'
+                label = parts[0].lower()  #class
                 x = float(parts[1])
                 y = float(parts[2])
-
-                color_val = COLOR_TO_INT.get(label)
+                color_val = self._get_label_num(label)
                 if color_val is not None:
                     row, col = self._get_grid_position(x, y, matrix, target_size=target_size)
                     color_grid[row][col] = color_val
 
-        return color_grid    
+        return color_grid
+
+    @abstractmethod    
+    def _get_label_num(self, label:str) -> int:
+        return -1
+
+    @abstractmethod
+    def translate_to_fen(self, old_fen: str, detections_file: str) -> str:
+        """
+        Given an old FEN and a labels file, translates the detected pieces into a new FEN string.
+        """
+        pass
+
+    @abstractmethod
+    def translate_to_move(self, board: chess.Board, detections_file: str):
+        """
+        Given an old board and a labels file, translates the detected pieces into a move UCI string.
+        """
+        pass 
+
+class AdvancedToFenTranslator(Translator):
+
+    def __init__(self, flip: bool = False):
+        super().__init__(flip)
+
+    def _get_label_num(self, label:str) -> int:
+        return CLASS_TO_INT.get(label)
+
+    def translate_to_fen(self, old_fen: str, detections_file: str) -> str:
+        """
+        Generates a new FEN string based on the old FEN and detected colors.
+        """
+        active_turn = ""
+        old_board_grid = []
+        detected_color_grid = self._create_detected_grid(detections_file, CORNERS_FILE)
+        if len(old_fen)==1:
+            # this is the case where we initialize a board and the old_fen becomes indicator of turn
+            active_turn = 1 if old_fen=="w" else 0
+        self._debug_boards([old_board_grid, detected_color_grid])
+        return grid_to_fen(detected_color_grid, active_turn)
+    
+
+    def translate_to_move(self, board: chess.Board, detections_file: str) -> str:
+        return ""
+
+
+class BinaryToFenTranslator(Translator):
+
+    def __init__(self, flip: bool = False):
+        super().__init__(flip)
+
+    def _get_label_num(self, label:str) -> int:
+        res =  COLOR_TO_INT.get(label)
+        return res
 
     def translate_to_fen(self, old_fen: str, detections_file: str) -> str:
         """

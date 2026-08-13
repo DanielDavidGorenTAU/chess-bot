@@ -1,4 +1,7 @@
-import pyzed.sl as sl
+try:
+    import pyzed.sl as sl
+except ImportError:
+    sl = None
 import cv2
 import os
 from datetime import datetime

@@ -2,14 +2,15 @@ from .config import AppConfig
 from factories.hardware_factory import HardwareFactory
 from factories.board_setup_factory import BoardSetupFactory
 from factories.game_factory import GameFactory
+from factories.init_board_detector_factory import InitDetectorFactory
 from .session import ChessSession
 
 
 if __name__ == "__main__":
-    # 1. Load system settings
+    # Load system settings
     config = AppConfig.load("/home/checkmate/Documents/chess-bot/main/config.yaml")
 
-    # 2. Instantiate hardware factory (creates shared camera/robot references)
+    # Instantiate hardware factory (creates shared camera/robot references)
     hw_factory = HardwareFactory(config)
     camera = hw_factory.get_camera()
     robot_hw = hw_factory.get_robot_hardware()
@@ -17,22 +18,29 @@ if __name__ == "__main__":
     if config.game.white_player == "human":
         robot_hw.flip_board_robot_view()
 
-    # 3. Create domain-specific setup service (if configured)
+    #  Create domain-specific setup service (if configured)
     board_setup_service = None
     if config.game.run_board_setup:
         setup_factory = BoardSetupFactory(config, camera=camera, robot=robot_hw)
         board_setup_service = setup_factory.create_setup_service()
 
-    # 4. Create gameplay domain
+    #  Create board detector
+    init_board_detector = None
+    if config.game.run_initial_detection:
+        init_detecotr_factory = InitDetectorFactory(config, camera=camera)
+        board_setup_service = init_detecotr_factory.create_initial_board_detector()
+
+    #  Create gameplay domain
     game_factory = GameFactory(config, camera=camera, robot=robot_hw)
     chess_game = game_factory.create_game()
 
-    # 5. Assemble session and run execution pipeline
+    #  Assemble session and run execution pipeline
     session = ChessSession(
         config=config,
         hardware_resources=hw_factory.get_active_resources(),
         game=chess_game,
-        board_setup_service=board_setup_service
+        board_setup_service=board_setup_service,
+        initial_board_detector=init_board_detector
     )
 
     session.run()
