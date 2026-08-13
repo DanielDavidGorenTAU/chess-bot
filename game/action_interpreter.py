@@ -29,6 +29,11 @@ class ActionFactory():
         from_r, from_c = convert_square_to_coordinates(from_sq)
         to_r, to_c = convert_square_to_coordinates(to_sq)
         grid, turn = parse_board_to_int_grid(board)
+        for row in grid:
+            print(row)
+        print("\n")
+        print(f"from: ({from_r, from_c}), to: ({to_r, to_c})")
+        
 
         from_val = grid[from_r][from_c]
         to_val = grid[to_r][to_c]

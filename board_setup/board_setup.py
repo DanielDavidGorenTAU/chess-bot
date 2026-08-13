@@ -22,7 +22,11 @@ class PieceIngestionPipeline:
         orientation = pose.orientation
 
         # 2. Arm move piece to platform
-        if not self.robot.move_piece_to_platform(head, base, orientation):
+        if not self.robot.move_piece_to_platform(
+            self.robot.robot_hardware.camera_vector_to_robot_vector(head),
+            self.robot.robot_hardware.camera_vector_to_robot_vector(base),
+            orientation
+        ):
             raise RobotFailedException("Robot failed while moving piece to platform")
 
         # 3. Detect piece class on platform

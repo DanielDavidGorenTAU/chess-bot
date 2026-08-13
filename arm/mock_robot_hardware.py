@@ -15,8 +15,8 @@ class MockRobotHardware(AbstractRobotHardware):
     log: TextIOBase
     friendly_pose_names: dict[Vector, str]
 
-    def __init__(self, log: TextIOBase):
-        super().__init__()
+    def __init__(self, log: TextIOBase = None):
+        super().__init__(log=log)
         self.speed = 0.01
         self.acceleration = 0.01
         self._pose = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]

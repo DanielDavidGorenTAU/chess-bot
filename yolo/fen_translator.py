@@ -70,7 +70,7 @@ class Translator(ABC):
 class BinaryToFenTranslator(Translator):
 
     def __init__(self, flip: bool):
-        super.__init__(flip)
+        super().__init__(flip)
 
     def _create_detected_grid(self, detections_file, corners_file, target_size=800):
         """
