@@ -41,8 +41,9 @@ class Translator(ABC):
         square_size = target_size / 8.0
         col = int(wx // square_size)
         row = int(wy // square_size)
-        
-        row, col =  max(0, min(7, row)), max(0, min(7, col))
+        # Captured pieces outside the grid bounds 
+        if not (0 <= row <= 7 and 0 <= col <= 7):
+            return -1, -1
 
         if self.flip:
             row = 7 - row
@@ -79,7 +80,8 @@ class Translator(ABC):
                 color_val = self._get_label_num(label)
                 if color_val is not None:
                     row, col = self._get_grid_position(x, y, matrix, target_size=target_size)
-                    color_grid[row][col] = color_val
+                    if row>=0 and col>=0:
+                        color_grid[row][col] = color_val
 
         return color_grid
 
