@@ -743,7 +743,7 @@ def main():
         #robot..move_on_chessboard(self.positions['h5'], right = CELL_LENGTH/2, up = -CELL_LENGTH/2)
         #robot.move_to(A1_AYAL+ robot.down_orientation)
         #robot.move_to(robot.positions['h5'])
-        
+        robot.move_to(robot.positions['b2'], z=robot.grip_height[PieceType.KNIGHT]+0.00)
 
 
         #robot.move_to(z=robot.safe_height)

@@ -61,16 +61,19 @@ class PlayingArm(PlayingRobot):
         Private method for moving a piece, using the hardware class
         """
         robot = self.robot_hardware
-        #dx, dy = self.board_mapper.get_piece_grasping_data(start_pos)
 
         if speed is None:
             speed = robot.speed
         if acceleration is None:
             acceleration = robot.acceleration
+
+        # --- APPLY HEIGHT SAFTEY ---
         if robot.pose[Z] < robot.safe_height:
             robot.move_to(z=robot.safe_height)
-
-        # update chess board locations
+        
+        path_is_clear = self.is_path_clear(start_pos, end_pos, type) 
+        
+        # --- GET PHYSICAL POSITIONS ---
         start_pos = robot.normalize_pos(start_pos)
         end_pos = robot.normalize_pos(end_pos)
         if rz_rotation_start is not None:
@@ -79,23 +82,27 @@ class PlayingArm(PlayingRobot):
             end_pos[3:6] = robot.get_rotated_tcp_orientation(end_pos,Rz=rz_rotation_end)
 
         robot.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET,wait=False) #  open the gripper
-
-        # move to first spot
+        
+        # --- PICKUP FROM BOARD ---
         robot.move_to(start_pos, z=robot.safe_height, speed=speed, acceleration=acceleration) 
-
-        # grip the piece
         robot.move_to(z=robot.grip_height[type])
         robot.set_gripper(CLOSED) 
-        robot.move_to(z=robot.safe_height)
 
-        # move to end spot
-        robot.move_to(end_pos, z=robot.safe_height, speed=speed, acceleration=acceleration)
+        if path_is_clear:
+            robot.move_to(z=robot.grip_height[type]+0.01)
+        else:
+            robot.move_to(z=robot.safe_height)
+        
+        # --- PLACE ON BOARD ---
+        if path_is_clear:
+            robot.move_to(end_pos, z=robot.grip_height[type]+0.01, speed=speed, acceleration=acceleration)
+        else:
+            robot.move_to(end_pos, z=robot.safe_height, speed=speed, acceleration=acceleration)
+        
         robot.move_to(z=robot.grip_height[type] + GRIP_RELEASE_HEIGHT)
-        
         robot.set_gripper(robot.get_gripper() - GRIP_RELEASE_OFFSET) # release the piece
-        
-        # return to start postion
         robot.move_to(z=robot.safe_height)
+        
         if move_to_start:
             robot.move_to(robot.start_position, z=robot.sky_height, speed=speed, acceleration=acceleration)
 
@@ -240,7 +247,7 @@ class PlayingArm(PlayingRobot):
             if move_to_start:
                 robot.move_to(robot.start_position, z=robot.sky_height, speed=speed, acceleration=acceleration)
 
-    
+
     def is_path_clear(self, start_pos_name, end_pos_name, piece_type):
         """
         Checks if the trajectory between start and end squares is completely empty.
@@ -250,10 +257,10 @@ class PlayingArm(PlayingRobot):
         if piece_type == PieceType.KNIGHT:
             return False
             
-        board = PerceptionState.get_latest_board()
+        perception = PerceptionState()
+        board = perception.get_latest_board()
         
         # 2. Convert standard names (e.g., 'e2') to 0-7 indices
-        # col (file): 'a'=0, 'h'=7. row (rank): '1'=0, '8'=7
         start_col = ord(start_pos_name.lower()[0]) - ord('a')
         start_row = int(start_pos_name[1]) - 1
         
@@ -265,6 +272,7 @@ class PlayingArm(PlayingRobot):
         step_row = 0 if end_row == start_row else (1 if end_row > start_row else -1)
         
         # Safety check: if it's not a valid straight or diagonal line, fly high
+        is_diagonal = (step_col != 0 and step_row != 0)
         if step_col != 0 and step_row != 0 and abs(end_col - start_col) != abs(end_row - start_row):
             return False 
             
@@ -273,18 +281,41 @@ class PlayingArm(PlayingRobot):
         cur_row = start_row + step_row
         
         while (cur_col, cur_row) != (end_col, end_row):
-            # Convert (row, col) back to python-chess square index (0 to 63)
-            # In python-chess, A1 is 0, B1 is 1, A2 is 8, etc.
+            # Check primary square
             sq_index = cur_row * 8 + cur_col
-            
-            # If any square in between has a piece, the path is blocked
             if board.piece_at(sq_index) is not None:
                 return False 
                 
+            # Check side neighbors for diagonal moves
+            if is_diagonal:
+                neighbor_col1 = cur_col + step_col
+                neighbor_row1 = cur_row
+                if 0 <= neighbor_col1 <= 7 and 0 <= neighbor_row1 <= 7:
+                    if board.piece_at(neighbor_row1 * 8 + neighbor_col1) is not None:
+                        return False
+                        
+                neighbor_col2 = cur_col
+                neighbor_row2 = cur_row + step_row
+                if 0 <= neighbor_col2 <= 7 and 0 <= neighbor_row2 <= 7:
+                    if board.piece_at(neighbor_row2 * 8 + neighbor_col2) is not None:
+                        return False
+
             cur_col += step_col
             cur_row += step_row
+
+        # 5. HARDENED FIX: Check the immediate side neighbors of the DESTINATION square for diagonal moves
+        if is_diagonal:
+            # Check adjacent columns/rows right next to the target landing square
+            target_neighbors = [
+                (end_col + step_col, end_row),
+                (end_col, end_row + step_row)
+            ]
+            for n_col, n_row in target_neighbors:
+                if 0 <= n_col <= 7 and 0 <= n_row <= 7:
+                    if board.piece_at(n_row * 8 + n_col) is not None:
+                        return False
             
-        # If the loop finishes without hitting a piece, the path is completely clear
+        # If all checks pass, the path and landing clearance are safe
         return True
 
     # experimental - shorten the time to travel
