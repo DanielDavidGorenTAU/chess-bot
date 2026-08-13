@@ -113,7 +113,7 @@ class AdvancedToFenTranslator(Translator):
         """
         Generates a new FEN string based on the old FEN and detected colors.
         """
-        active_turn = ""
+        active_turn = -1
         old_board_grid = []
         detected_color_grid = self._create_detected_grid(detections_file, CORNERS_FILE)
         if len(old_fen)==1:

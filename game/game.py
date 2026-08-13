@@ -13,7 +13,6 @@ class Game:
         self.board: chess.Board = chess.Board(self.init_fen.strip())
         PerceptionState().set_latest_board(board=self.board)
 
-        self.board : chess.Board = chess.Board(self.init_fen.strip())
     def set_fen(self, fen:str):
         self.init_fen = fen.strip()
         self.board = chess.Board(self.init_fen)

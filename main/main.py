@@ -30,7 +30,7 @@ if __name__ == "__main__":
     init_board_detector = None
     if config.game.run_initial_detection:
         init_detecotr_factory = InitDetectorFactory(config, camera=camera)
-        board_setup_service = init_detecotr_factory.create_initial_board_detector()
+        init_board_detector = init_detecotr_factory.create_initial_board_detector()
 
     #  Create gameplay domain
     game_factory = GameFactory(config, camera=camera, robot=robot_hw)
