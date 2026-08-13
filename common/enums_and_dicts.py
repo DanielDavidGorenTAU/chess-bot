@@ -62,6 +62,9 @@ INT_TO_FEN = {
 INT_TO_NAME = ["black-bishop", "black-king", "black-knight", "black-pawn", "black-queen", "black-rook", 
                "white-bishop", "white-king", "white-knight", "white-pawn", "white-queen", "white-rook"]
 
+CLASS_TO_INT = {"black-bishop":0, "black-king":1, "black-knight":2, "black-pawn":3, "black-queen":4, "black-rook":5, 
+               "white-bishop":6, "white-king":7, "white-knight":8, "white-pawn":9, "white-queen":10, "white-rook":11}
+
 PROMOTED_PIECES = {
     'b' : PieceType.BISHOP,
     'n' : PieceType.KNIGHT,

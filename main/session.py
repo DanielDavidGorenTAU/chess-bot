@@ -3,6 +3,7 @@ from typing import List, Any, Optional
 from .config import AppConfig
 from game.game import Game
 from factories.board_setup_factory import BoardSetupService
+from yolo.human_interpreter import HumanMoveController
 
 
 class ChessSession:
@@ -13,12 +14,14 @@ class ChessSession:
         config: AppConfig, 
         hardware_resources: List[Any],
         game: Game,
-        board_setup_service: Optional[BoardSetupService] = None
+        board_setup_service: Optional[BoardSetupService] = None,
+        initial_board_detector: Optional[HumanMoveController] = None
     ):
         self.config = config
         self.hardware_resources = hardware_resources
         self.game = game
         self.board_setup_service = board_setup_service
+        self.initial_board_detector = initial_board_detector
         self._exit_stack = ExitStack()
 
     def run(self):
@@ -34,6 +37,18 @@ class ChessSession:
             if self.config.game.run_board_setup and self.board_setup_service:
                 print("\n=== STAGE 1: BOARD SETUP ===")
                 self.board_setup_service.setup_board()
+
+            # Optional Pre-game board detection
+            if (not self.config.game.run_board_setup) and self.config.game.run_initial_detection and self.initial_board_detector:
+                print("\n=== STAGE 1.5: BOARD DETECTION ===")
+                fen = self.initial_board_detector.detect_initial_board() #can have turn as argument
+                print(f"Detected FEN: {fen}")
+                correct = input("Is the FEN correct (yes/no): ")
+                if correct=="no":
+                    fen = input("Input your real FEN: ")
+                self.game.set_fen(fen)
+                
+
 
             # Gameplay phase
             print("\n=== STAGE 2: CHESS GAME ===")
