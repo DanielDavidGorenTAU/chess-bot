@@ -12,6 +12,7 @@ class RobotBoardMapper:
         self.target_size = target_size
         self.cell_size_mm = cell_size_mm
         self.board_size_mm = 8.0 * cell_size_mm
+        self.flip = False # robot is white
         
         with open(corners_file, "r") as f:
             corners = json.load(f)
@@ -79,15 +80,23 @@ class RobotBoardMapper:
         Takes a square name (e.g., 'a3'), the locations dictionary, and an optional piece type.
         Returns the deviation from the square's center dx, dy.
         """
+        
         piece_locations = self.get_all_pieces_physical_locations()
         if piece_locations is None: # not created yet
             return 0.0, 0.0
 
         # Convert square name to row and column (0 to 7)
         square_name = square_name.lower()
-        col = ord(square_name[0]) - ord('a')
-        row = 8 - int(square_name[1])
-        
+        logical_col = ord(square_name[0]) - ord('a')
+        logical_row = 8 - int(square_name[1])
+
+        if self.flip:
+            col = 7 - logical_col
+            row = 7 - logical_row
+        else:
+            col = logical_col
+            row = logical_row
+
         # Input validation
         if not (0 <= row <= 7 and 0 <= col <= 7):
             raise Exception(f"Error: Invalid square name {square_name}")

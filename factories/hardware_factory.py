@@ -28,11 +28,14 @@ class HardwareFactory:
                 print("[HardwareFactory] Using Mock Robot (No hardware loaded)")
                 return None
             
+            flip_status = self.config.game.white_player == "human"
+
             self._robot_hw = RobotHardware(
                 robot_ip=self.config.robot.ip,
                 base_tcp_port=self.config.robot.base_tcp_port,
                 speed=self.config.robot.speed,
-                acceleration=self.config.robot.acceleration
+                acceleration=self.config.robot.acceleration,
+                flip=flip_status
             )
             self._hardware_resources.append(self._robot_hw)
         return self._robot_hw

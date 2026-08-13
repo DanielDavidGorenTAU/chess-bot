@@ -1,5 +1,7 @@
 # The interface behind RobotHardware and MockRobotHardware
 
+import os
+from io import TextIOBase
 from typing import Optional
 from abc import ABC, abstractmethod
 from scipy.spatial.transform import Rotation
@@ -20,7 +22,7 @@ class AbstractRobotHardware(ABC):
     sky_height: Optional[float]
     safe_height: Optional[float]
 
-    def __init__(self):
+    def __init__(self, log: TextIOBase = None):
         self.speed = None
         self.acceleration = None
         self.step_right = None
@@ -31,6 +33,7 @@ class AbstractRobotHardware(ABC):
         self.start_position = None
         self.sky_height = None
         self.safe_height = None
+        self.log = log or os.devnull
 
 
     # Abstract methods:
