@@ -1,5 +1,6 @@
 import chess
 from .player import Player
+from arm.perception_state import PerceptionState
 
 DEFAULT_STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
@@ -10,6 +11,7 @@ class Game:
         self.turn: int = self._extract_turn_from_fen(fen) # 1 for white, 0 for black
         self.is_running: bool = False
         self.board: chess.Board = chess.Board(self.init_fen.strip())
+        PerceptionState().set_latest_board(board=self.board)
 
     def _extract_turn_from_fen(self, fen_string: str) -> int:
         """
