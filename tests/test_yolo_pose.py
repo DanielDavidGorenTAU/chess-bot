@@ -18,7 +18,7 @@ from ZED.crop_images import crop_carton_roi
 
 
 
-def capture_frame_from_camera(camera_index: int = 0, warmup_frames: int = 10) -> np.ndarray:
+def capture_frame_from_camera() -> np.ndarray:
     # ZED Camera does not use a CV2 device index like a webcam.
     with Camera() as camera:
         with tempfile.TemporaryDirectory(prefix="yolo_pose_camera_") as tmpdir:
@@ -163,19 +163,17 @@ if __name__ == "__main__":
                         help="Confidence threshold for prediction.")
     parser.add_argument("--use_camera", action="store_true",
                         help="Capture a single frame from the default camera instead of using an image file.")
-    parser.add_argument("--camera_index", type=int, default=0,
-                        help="Camera device index to use when --use_camera is enabled.")
 
     args = parser.parse_args()
 
     if args.use_camera:
-        frame = capture_frame_from_camera(args.camera_index)
+        frame = capture_frame_from_camera()
         annotate_and_save(
             frame,
             args.output_dir,
             model_path=args.model_path,
             conf_threshold=args.conf_threshold,
-            image_name=f"camera_{args.camera_index}.png"
+            image_name=f"camera.png"
         )
     else:
         annotate_and_save(

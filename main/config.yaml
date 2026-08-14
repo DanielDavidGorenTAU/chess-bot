@@ -1,5 +1,5 @@
 game:
-  run_board_setup: false
+  run_board_setup: true
   run_initial_detection: true
   white_player: "robot"    # Options: "human", "robot"
   black_player: "human"    # Options: "human", "robot"

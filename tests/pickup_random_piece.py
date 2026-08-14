@@ -48,17 +48,17 @@ if __name__ == "__main__":
         image = capture_frame_from_camera(camera)
         model = YOLO("/home/checkmate/Documents/chess-bot/runs/pose/runs/pose_train/chess_board-2/weights/best.pt")
         results = model.predict(source=image, imgsz=[320, 960], conf=0.25)[0]
-
-        all_points = []
-        for i in range(len(results.boxes)):
-            cls_id = int(results.boxes.cls[i].item())
+        boxes = results.boxes
+        keypoints = results.keypoints
+        for i in range(len(boxes)):
+            cls_id = int(boxes.cls[i].item())
             cls = Orientation(cls_id)
 
             # --- B. Keypoints (Head & Base) ---
-            if results.keypoints is not None and len(results.keypoints) > i:
-                kpts_xy = results.keypoints.xy[i].cpu().numpy()
-                if results.keypoints.conf is not None:
-                    kpts_conf = results.keypoints.conf[i].cpu().numpy()
+            if keypoints is not None and len(keypoints) > i:
+                kpts_xy = keypoints.xy[i].cpu().numpy()
+                if keypoints.conf is not None:
+                    kpts_conf = keypoints.conf[i].cpu().numpy()
                 else:
                     kpts_conf = [1.0, 1.0]
 
@@ -67,16 +67,15 @@ if __name__ == "__main__":
                     base_x, base_y = int(kpts_xy[1][0]), int(kpts_xy[1][1])
 
                     print(kpts_xy[0], kpts_xy[1], cls)
-                    all_points.append((
-                        (base_x + X_MIN, base_y + Y_MIN),
-                        (head_x + X_MIN, head_y + Y_MIN),
-                        cls,
-                    ))
+                    example_head = (head_x + X_MIN, head_y + Y_MIN)
+                    example_base = (base_x + X_MIN, base_y + Y_MIN)
+                    example_cls = cls
 
         robot = BoardSettingArm(hw)
-        for i, (base, head, cls) in enumerate(sorted(all_points, key=lambda pt: pt[0][1]), 1):
-            base = hw.camera_vector_to_robot_vector(camera.last_image_get_xyz(*base))
-            head = hw.camera_vector_to_robot_vector(camera.last_image_get_xyz(*head))
-
-            robot.move_piece_to_platform(head_pos=head, base_pos=base, orientation=cls)
-            robot.move_from_platform_to_target(f"c{i}", type=PieceType.PAWN)
+        print("cropped:", (base_x, base_y), (head_x, head_y))
+        print("full-frame:", example_base, example_head)
+        base = hw.camera_vector_to_robot_vector(camera.last_image_get_xyz(*example_base))
+        head = hw.camera_vector_to_robot_vector(camera.last_image_get_xyz(*example_head))
+        print(example_base, example_head, base, head)
+        robot.move_piece_to_platform(head_pos=head, base_pos=base, orientation=example_cls)
+        #robot.move_from_platform_to_target("c3", type=PieceType.KNIGHT)

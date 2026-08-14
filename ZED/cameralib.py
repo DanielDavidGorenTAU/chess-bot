@@ -6,6 +6,7 @@ import cv2
 import os
 from datetime import datetime
 import numpy as np
+from common.typing import Vector
 
 # Folder where images will be saved (inside project)
 SAVE_DIR = "zed_setting_images_2"
@@ -160,6 +161,7 @@ class Camera:
 
             elif key == ord("q"):
                 return False
+
     def get_two_points(self):
         point_cloud = sl.Mat()
         base_point = None
@@ -204,6 +206,23 @@ class Camera:
             if key == 27:  # ESC
                 break
         return  head_point, base_point
+
+    def last_image_get_xyz(self, x: float, y: float) -> Vector:
+        point_cloud = sl.Mat()
+        self.zed.retrieve_measure(
+            point_cloud,
+            sl.MEASURE.XYZ
+        )
+        err, point3d = point_cloud.get_value(x, y)
+        if err != sl.ERROR_CODE.SUCCESS:
+            raise Exception("Failed to get 3D point")
+
+        X_, Y_, Z_ = point3d[:3]
+        if not np.isfinite(X_) or not np.isfinite(Y_) or not np.isfinite(Z_):
+            print("Invalid depth at this pixel")
+
+        return X_, Y_, Z_
+
     def __enter__(self):
         status = self.zed.open(self.init_params)
         if status != sl.ERROR_CODE.SUCCESS:

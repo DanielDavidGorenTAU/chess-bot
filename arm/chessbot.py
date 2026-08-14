@@ -520,7 +520,8 @@ def mouse_callback(event, x, y, flags, param):
     if event == cv2.EVENT_LBUTTONDOWN:
             clicked_point = (x, y)
 
-def get_base_and_head_camera_points():
+# Returns base, head
+def get_base_and_head_camera_points() -> tuple[Vector, Vector]:
     global clicked_point, point_cloud
     base_point = None
     head_point = None

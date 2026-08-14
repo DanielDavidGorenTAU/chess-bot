@@ -223,6 +223,9 @@ class AbstractRobotHardware(ABC):
             position -= open_by
         self.set_gripper_raw(position, speed, force, wait)
 
+    def move_to_safe_height(self):
+        self.move_to(z=self.safe_height)
+
     def mov_chess_piece(self, type: PieceType=None, start_pos=None, end_pos=None, speed=None, acceleration=None, rz_rotation_start=None, rz_rotation_end=None, move_to_start=True):
         if speed is None:
             speed = self.speed
