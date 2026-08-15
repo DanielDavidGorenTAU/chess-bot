@@ -21,6 +21,17 @@ class Translator(ABC):
                 print(row)
             print("\n")
 
+    def _get_non_capture_moves(self, board: chess.Board, square: str):
+        """ Returns list of chess.Move"""
+        square = chess.parse_square(square)
+
+        moves = []
+
+        for move in board.legal_moves:
+            if move.from_square == square and not board.is_capture(move):
+                moves.append(move)
+
+        return moves
 
     def _get_warp_matrix(self, corners, target_size=800):
         src_pts = np.array(corners, dtype="float32")
@@ -124,10 +135,24 @@ class AdvancedToFenTranslator(Translator):
         self._debug_boards([old_board_grid, detected_color_grid])
         return grid_to_fen(detected_color_grid, active_turn)
     
-
+    
     def translate_to_move(self, board: chess.Board, detections_file: str) -> str:
         return ""
 
+    def detect_promotion(self, detections_file: str, sqr: str) -> str:
+        """
+        Looks at the sqr of the board from detections_file outputs the class of the piece at that square. 
+        """
+        detected_color_grid = self._create_detected_grid(detections_file, CORNERS_FILE)
+        target_cell = convert_square_to_coordinates(sqr)
+        cell_class = detected_color_grid[target_cell[0]][target_cell[1]]
+        if cell_class<0 or cell_class in [1,3,7,9]: # class == empty, pawn or king 
+            return ""
+        else:
+            return INT_TO_FEN[cell_class].lower()
+
+def create_advaced_translator(tranlator: Translator)->AdvancedToFenTranslator:
+    return AdvancedToFenTranslator(flip=tranlator.flip)
 
 class BinaryToFenTranslator(Translator):
 
@@ -235,7 +260,9 @@ class BinaryToFenTranslator(Translator):
         old_board_grid, active_turn = parse_board_to_int_grid(board)
         detected_color_grid = self._create_detected_grid(detections_file, CORNERS_FILE)
         self._debug_boards([old_board_grid, detected_color_grid])
-
+        # White is always at the buttom. If flipped the camera is from above so the blocker has less row value
+        # Otherwise the camera at bottum and blocker's row is higher 
+        blocker_offset = -1 if self.flip else 1
         moved_source=[]
         moved_target=[]
         captured=[]
@@ -262,20 +289,78 @@ class BinaryToFenTranslator(Translator):
         print(f"Moved Source: {moved_source}, Moved Target: {moved_target}, Captured: {captured}")
         source_sqr = ""
         target_sqr = ""
-        if len(captured) > 0:
-            # Handle capture: Move the piece from moved_source to captured square
+        promotion = ""
+        if len(captured) == 1 and len(moved_source)==1:
+            # Handle regular capture: 
             capturing_piece = old_board_grid[moved_source[0][0]][moved_source[0][1]]
             source_sqr = convert_coordinates_to_square(moved_source[0][0], moved_source[0][1])
             target_sqr = convert_coordinates_to_square(captured[0][0], captured[0][1])
+            if (capturing_piece==3 and captured[0][0] == 7) or (capturing_piece==6 and captured[0][0] == 0):
+                promotion = "_"
 
+        elif len(captured) == 1 and len(moved_source)==2:
+            # Handle capture where moving piece blocks
+            true_source = None
+            blocked_source = None
+            for source in moved_source:
+                if source[1]==captured[0][1] and source[0]+blocker_offset==captured[0][0]:
+                    blocked_source = source
+                else:
+                    true_source = source
+            blocked_sqr = convert_coordinates_to_square(blocked_source[0], blocked_source[1])
+            source_sqr = convert_coordinates_to_square(true_source[0], true_source[1])
+            target_sqr = convert_coordinates_to_square(captured[0][0], captured[0][1])
+            print(f"The square: {blocked_sqr} is blocked from the camera")
+
+        elif len(captured) == 0 and len(moved_source)==2 and len(moved_target) == 0:
+            # Handle capture where moving piece is blockd
+            true_source = None
+            captured_cell = None
+            capturing_piece = -1
+            for source in moved_source:
+                piece_class = old_board_grid[source[0]][source[1]]
+                if get_color(piece_class)==active_turn:
+                    true_source = source
+                    capturing_piece = piece_class
+                else:
+                    captured_cell = source
+            source_sqr = convert_coordinates_to_square(true_source[0], true_source[1])
+            target_sqr = convert_coordinates_to_square(captured_cell[0], captured_cell[1])
+            print(f"The square: {target_sqr} is blocked from the camera")            
+            if (capturing_piece==3 and captured_cell[0] == 7) or (capturing_piece==6 and captured_cell[0] == 0):
+                promotion = "_"
 
         elif len(moved_source) == 1 and len(moved_target) == 1:
-            # Handle normal move: Move the piece from moved_source to moved_target
+            # Handle normal move: 
             moving_piece = old_board_grid[moved_source[0][0]][moved_source[0][1]]
-            old_board_grid[moved_source[0][0]][moved_source[0][1]] = -1
-            old_board_grid[moved_target[0][0]][moved_target[0][1]] = moving_piece
             source_sqr = convert_coordinates_to_square(moved_source[0][0], moved_source[0][1])
             target_sqr = convert_coordinates_to_square(moved_target[0][0], moved_target[0][1])    
+            if (moving_piece==3 and moved_target[0][0] == 7) or (moving_piece==6 and moved_target[0][0] == 0):
+                promotion = "_"
+
+        elif len(moved_source)==1 and len(moved_target)==0 and len(captured) == 0:
+            # Handle moveing where moving piece is blocked
+            source_sqr = convert_coordinates_to_square(moved_source[0][0], moved_source[0][1])
+            moves = self._get_non_capture_moves( board, source_sqr)
+            filtered_targets = []
+            for move in moves:
+                possible_target = move.uci()[2:4]
+                target_cell = convert_square_to_coordinates(possible_target)
+                blocker_row = target_cell[0]+blocker_offset
+                if blocker_row>7 or blocker_row<0:
+                    continue
+                blocker_col = target_cell[1]
+                if(old_board_grid[blocker_row][blocker_col] in [1,4,7,10]): #blocker is big piece
+                    filtered_targets.append(possible_target)
+            if len(filtered_targets)==1:
+                target_sqr = filtered_targets[0]
+                print(f"The square: {target_sqr} is blocked from the camera")
+            elif len(filtered_targets)>1:
+                print(f"Some square(s) are blocked from the camera, ambigous move")
+                return ""
+            else:
+                print("Error: Unexpected move scenario.")
+                return ""
 
                     
         elif len(moved_source) == 2 and len(moved_target) == 2:
@@ -313,9 +398,20 @@ class BinaryToFenTranslator(Translator):
                 source_sqr = convert_coordinates_to_square(capturer_source[0], capturer_source[1])
                 target_sqr = convert_coordinates_to_square(capturer_target[0], capturer_target[1])                  
             else:
-                print("Error: Unexpected move scenario.")
+                # Handle moving but moving piece blocks
+                true_source = None
+                blocked_source = None
+                for source in moved_source:
+                    if source[1]==moved_target[0][1] and source[0]+blocker_offset==moved_target[0][0]:
+                        blocked_source = source
+                    else:
+                        true_source = source
+                blocked_sqr = convert_coordinates_to_square(blocked_source[0], blocked_source[1])
+                source_sqr = convert_coordinates_to_square(true_source[0], true_source[1])
+                target_sqr = convert_coordinates_to_square(moved_target[0][0], moved_target[0][1])
+                print(f"The square: {blocked_sqr} is blocked from the camera")
             
         else:
             print("Error: Unexpected move scenario.")
 
-        return source_sqr+target_sqr
+        return source_sqr+target_sqr+promotion

@@ -1,6 +1,6 @@
 import chess
 from .board_pieces_detector import BoardPiecesDetector, AbsBoardDetector
-from .fen_translator import Translator, BinaryToFenTranslator
+from .fen_translator import *
 from arm.StorageManager import StorageManager
 from common.utils import convert_fen_char_to_type_and_color
 from collections import Counter
@@ -13,10 +13,12 @@ class HumanMoveController:
     to compute updated board after a human player makes a move.
     """
 
-    def __init__(self, yolo_model: AbsBoardDetector, translator: Optional[Translator] = None):
+    def __init__(self, yolo_model: AbsBoardDetector, translator: Optional[Translator] = None, advanced_model: AbsBoardDetector = None):
         self.yolo_model: AbsBoardDetector = yolo_model
         # Default to BinaryToFenTranslator if none is supplied
         self.translator: Translator = translator or BinaryToFenTranslator()
+        self.promotion_model: AbsBoardDetector = advanced_model
+        self.promotion_translator: AdvancedToFenTranslator = create_advaced_translator(tranlator=self.translator)
         self.storage = StorageManager() # Singleton
 
     def detect_initial_board(self, turn = "w",  image_path: Optional[str] = None) -> str:
@@ -40,6 +42,14 @@ class HumanMoveController:
         detections_file = self.yolo_model.predict(image_path=image_path)
         PerceptionState().set_latest_detections(detections_file)
         move_str = self.translator.translate_to_move(board, detections_file)
+        if move_str=="":
+            move_str = input("The translator wasn't able to understand the move. Input your move (UCI): ")
+        elif move_str[-1]=='_':
+            full_detections_file = self.yolo_model.predict(image_path=image_path)
+            promoted = self.promotion_translator.detect_promotion(full_detections_file, move_str[2:4])
+            if promoted=="":
+                promoted = input("The yolo model wasn't able to detect promotion. Input your piece (q, n, b, r): ")
+            move_str = move_str[0:4]+promoted
         print(f"Human Move: {move_str}")
         chess_move =  chess.Move.from_uci(move_str)
         board.push(chess_move)
