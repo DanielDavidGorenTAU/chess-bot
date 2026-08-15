@@ -12,7 +12,9 @@ class PieceIngestionPipeline:
         self.orientation_detector = orientation_detector
         self.platform_classifier = platform_classifier
         self.placement_planner = placement_planner
-        
+
+    def get_num_of_pieces(self)->int:
+        return self.placement_planner.get_total_count()
 
     def process_next_piece(self):
         # 1. Take picture & detect orientation
@@ -53,11 +55,7 @@ class BoardSetupService:
         """
         print("[Setup] Starting piece ingestion loop...")
         
-        while True:                   #####TODO: How to end the loop
-            if False: ###not self.pipeline.has_piece_in_tray()
-                print("[Setup] Pickup tray is empty. Setup paused/finished.")
-                break
-                
+        for _ in range(self.pipeline.get_num_of_pieces()):
             self.pipeline.process_next_piece()
 
         print("[Setup] Board setup complete!")

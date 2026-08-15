@@ -8,6 +8,7 @@ class PlacementPlanner():
         self.piece_target_stack_array = None
         self.grave_yard_counter_array = [1]*12 #counter for off board pieces, number represents the next grave yard cell for piece
         self._fen_to_targets(fen)
+        self.total_count = 0 #count of pieces to be set on board
         
 
     def _fen_to_targets(self, fen:str):
@@ -17,10 +18,12 @@ class PlacementPlanner():
             for col in range(8):
                 piece_type = int_grid[row][col]
                 if piece_type >= 0:
+                    self.total_count+=1
                     self.piece_target_stack_array[piece_type].append(convert_coordinates_to_square(row, col))
 
 
-
+    def get_total_count(self)->int:
+        return self.total_count
 
     def get_targer_for_piece(self, colored_piece: ColoredPieceType) -> str: 
         int_class = int(colored_piece)
