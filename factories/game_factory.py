@@ -2,7 +2,7 @@ from main.config import AppConfig
 from game.game import Game
 from game.player import Player, HumanPlayer, RobotPlayer
 from yolo.human_interpreter import HumanMoveController
-from yolo.board_pieces_detector import BoardPiecesDetector
+from yolo.board_pieces_detector import BoardPiecesDetector, ADVANCED
 from yolo.fen_translator import BinaryToFenTranslator  # or factory for translators
 from arm.playing_robot import *
 from ZED.cameralib import Camera
@@ -38,8 +38,9 @@ class GameFactory:
         yolo_model = BoardPiecesDetector(model_name=self.config.vision.model_name, camera=self.camera)
         flip = self.config.game.white_player == "human"
         translator = BinaryToFenTranslator(flip=flip)
+        advanced_model = BoardPiecesDetector(model_name=ADVANCED, camera=self.camera, optimize=True)
         
-        return HumanMoveController(yolo_model=yolo_model, translator=translator)
+        return HumanMoveController(yolo_model=yolo_model, translator=translator, advanced_model=advanced_model)
 
     def _build_player(self, player_type: str, name: str) -> Player:
         """Constructs a Human or Robot player based on config type."""
