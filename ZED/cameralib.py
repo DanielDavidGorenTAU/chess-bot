@@ -219,7 +219,7 @@ class Camera:
 
         X_, Y_, Z_ = point3d[:3]
         if not np.isfinite(X_) or not np.isfinite(Y_) or not np.isfinite(Z_):
-            print("Invalid depth at this pixel")
+            raise Exception("Invalid depth at this pixel")
 
         return X_, Y_, Z_
 

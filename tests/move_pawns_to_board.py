@@ -74,9 +74,11 @@ if __name__ == "__main__":
                     ))
 
         robot = BoardSettingArm(hw)
-        for i, (base, head, cls) in enumerate(sorted(all_points, key=lambda pt: -pt[0][1]), 1):
+        all_points.sort(key=lambda pt: -pt[0][1])
+        positions = [f"{letter}{number}" for letter in "abcdefgh" for number in range(1, 8 + 1)]
+        for (base, head, cls), position in zip(all_points, positions):
             base = hw.camera_vector_to_robot_vector(camera.last_image_get_xyz(*base))
             head = hw.camera_vector_to_robot_vector(camera.last_image_get_xyz(*head))
 
             robot.move_piece_to_platform(head_pos=head, base_pos=base, orientation=cls)
-            robot.move_from_platform_to_target(f"c{i}", type=PieceType.PAWN)
+            robot.move_from_platform_to_target(position, type=PieceType.PAWN)

@@ -71,6 +71,8 @@ class BoardSettingArm(BoardSettingRobot):
 
         self.robot_hardware.move_to(cube_pose,z=self.robot_hardware.sky_height)
 
+        return True
+
 
     def move_from_platform_to_target(self, target: str, type: PieceType, do_knight_correction: bool = True) -> bool:
         # grip from the cube   
@@ -99,6 +101,8 @@ class BoardSettingArm(BoardSettingRobot):
         
         self.robot_hardware.move_to(self.robot_hardware.start_position, z=self.robot_hardware.sky_height)
         self.robot_hardware.move_joint(BASE_EYAL, 1, 0.5) # align gripper
+
+        return True
 
 
         

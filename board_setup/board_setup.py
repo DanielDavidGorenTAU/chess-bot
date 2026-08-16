@@ -38,7 +38,7 @@ class PieceIngestionPipeline:
         target_square = self.placement_planner.get_targer_for_piece(piece_type)
 
         # 5. Move piece from platform to board
-        if not self.robot.move_from_platform_to_target(target_square):
+        if not self.robot.move_from_platform_to_target(target_square, piece_type):
             raise RobotFailedException("Robot failed while moving piece from platform to target "+target_square)
 
         print(f"Placed {INT_TO_NAME[piece_type]} onto {target_square}")

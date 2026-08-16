@@ -108,6 +108,8 @@ class RobotiqGripper:
         var_name, value_str = data.decode(self.ENCODING).split()
         if var_name != variable:
             raise ValueError(f"Unexpected response {data} ({data.decode(self.ENCODING)}): does not match '{variable}'")
+        if value_str == "?":
+            raise ValueError("Gripper returned '?'. Robot is probably turned off.")
         value = int(value_str)
         return value
 

@@ -9,7 +9,7 @@ from ultralytics import YOLO
 from ZED.cameralib import Camera
 
 
-MODEL_PATH: str = "models/yolov8_pose_best.pt"
+MODEL_PATH: str = "runs/pose/runs/pose_train/chess_board-2/weights/best.pt"
 PREDICTION_OUTPUT_DIR = "/home/checkmate/Documents/chess-bot/yolo/predictions_setup"
 IMAGE_OUTPUT_DIR = "/home/checkmate/Documents/chess-bot/yolo/photos_setup"
 DEFAULT_CONF: float = 0.5
@@ -36,8 +36,13 @@ class YoloOrientationDetector(OrientationDetector):
     and center of chess piece for grabbing.
     """
 
-
-    def __init__(self, camera: Optional[Camera] = None, model_path: str = MODEL_PATH, conf: float = DEFAULT_CONF):
+    def __init__(
+        self,
+        camera: Optional[Camera] = None,
+        model_path: str = MODEL_PATH,
+        conf: float = DEFAULT_CONF,
+        output_dir: str = "/tmp/",
+    ):
         """Initializes the YOLO Model wrapper for piece orientation."""
 
         super().__init__(camera=camera, conf=conf, path_list=[IMAGE_OUTPUT_DIR, PREDICTION_OUTPUT_DIR])
@@ -45,7 +50,7 @@ class YoloOrientationDetector(OrientationDetector):
         self.model_path: str = model_path
         print(f"Loading YOLO Pose model from: {self.model_path}")
         self.model: YOLO = YOLO(self.model_path)
-
+        self.output_dir = output_dir
 
     def set_model(self, model_path: str) -> None:
         """Reloads a new model if needed."""
@@ -90,8 +95,10 @@ class YoloOrientationDetector(OrientationDetector):
                     # Assumes in the labeling head is first, then base
                     kp_pts = kp.xy[0].tolist()
 
-                    head_coords = tuple(kp_pts[0]) if len(kp_pts) >= 1 else (0.0, 0.0)
-                    base_coords = tuple(kp_pts[1]) if len(kp_pts) >= 2 else (0.0, 0.0)
+                    (head_x, head_y), (base_x, base_y) = kp_pts
+
+                    head_coords = self.camera.last_image_get_xyz(head_x, head_y)
+                    base_coords = self.camera.last_image_get_xyz(base_x, base_y)
 
                     target_piece = PiecePose(
                         head=head_coords,

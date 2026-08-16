@@ -22,5 +22,5 @@ engine:
 
 vision:
   model_name: "binary"      # Options: "binary", "unary", "advanced"
-  manual_orientation: true
+  manual_orientation: false
   manual_on_platform: true
