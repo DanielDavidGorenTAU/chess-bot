@@ -61,8 +61,7 @@ class ManualPieceClassifier(PlatformPieceClassifier):
         """
         Get piece class by user shell dialog.
         """
-        int_class = int(input("Choose piece class (0-11): "))
-        return ColoredPieceType(int_class)
+        return ColoredPieceType.parse(input("Choose piece class: "))
 
 
 

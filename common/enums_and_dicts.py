@@ -24,12 +24,46 @@ class ColoredPieceType(IntEnum):
     WHITE_KNIGHT = 8
     WHITE_PAWN = 9
     WHITE_QUEEN = 10
-    WHITE_ROOK = 11    
+    WHITE_ROOK = 11
 
     @property
     def label(self):
         return self.name.lower()
-    
+
+    @property
+    def piece_type(self):
+        """Return the underlying non-colored PieceType for this piece."""
+        return PieceType(self.value % 6)
+
+    @classmethod
+    def parse(cls, notation: str):
+        """Parse FEN notation, color+piece abbreviations, or a class index string."""
+
+        token = str(notation).strip()
+        if not token:
+            raise ValueError("invalid chess notation")
+
+        if token.isdigit():
+            value = int(token)
+            if value not in cls._value2member_map_:
+                raise ValueError("invalid chess notation")
+            return cls(value)
+
+        if token in FEN_TO_INT:
+            return cls(FEN_TO_INT(token))
+
+        normalized = token.lower().replace(" ", "-")
+
+        if normalized in CLASS_TO_INT:
+            return cls(CLASS_TO_INT[normalized])
+
+        if len(normalized) == 2 and normalized[0] in {"b", "w"} and normalized[1] in {"b", "k", "n", "p", "q", "r"}:
+            color_offset = 0 if normalized[0] == "b" else 6
+            piece_offset = {"b": 0, "k": 1, "n": 2, "p": 3, "q": 4, "r": 5}[normalized[1]]
+            return cls(color_offset + piece_offset)
+
+        raise ValueError("invalid chess notation")
+
 FEN_TO_INT = {
     'b': 0,   # black-bishop
     'k': 1,   # black-king

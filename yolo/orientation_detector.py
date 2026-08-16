@@ -1,5 +1,6 @@
 import os
 import cv2
+import numpy as np
 from abc import ABC, abstractmethod
 from common.enums_and_dicts import Orientation
 from .vision_model import VisionModel
@@ -7,6 +8,8 @@ from typing import Optional, Tuple
 from dataclasses import dataclass
 from ultralytics import YOLO
 from ZED.cameralib import Camera
+from ZED import crop_images
+from ZED.crop_images import crop_carton_roi
 
 
 MODEL_PATH: str = "runs/pose/runs/pose_train/chess_board-2/weights/best.pt"
@@ -57,17 +60,37 @@ class YoloOrientationDetector(OrientationDetector):
         self.model_path = model_path
         self.model = YOLO(self.model_path)
 
+    def _load_and_crop_image(self, image_path: Optional[str], output_dir: Optional[str]) -> np.ndarray:
+        """
+        Load an image from path or camera, crop it using the standard ROI, and return as numpy array.
+        Returns the cropped image ready for model inference.
+        """
+        image_path = self._resolve_image_path(image_path, output_dir)
+        image = cv2.imread(image_path)
+        
+        if image is None:
+            raise RuntimeError(f"Failed to load image from {image_path}")
+        
+        cropped_image = crop_carton_roi(image)
+        return cropped_image
+
     def detect_pickup_pose(self, image_path: Optional[str] = None) -> Optional[PiecePose]:
         """
         Detects piece poses and returns ONLY the piece with the lowest 
         middle coordinate in the picture (highest y-value).
+        Loads image, crops it to the standard ROI, runs inference, then adjusts
+        detected coordinates back to original image space.
         """
         image_path = self._resolve_image_path(image_path, IMAGE_OUTPUT_DIR)
+        
+        # Load and crop the image
+        cropped_image = self._load_and_crop_image(image_path, IMAGE_OUTPUT_DIR)
 
-        # Run inference
+        # Run inference on cropped image
         results = self.model.predict(
-            source=image_path, 
-            conf=self.conf
+            source=cropped_image,
+            imgsz=[crop_images.HEIGHT, crop_images.WIDTH],
+            conf=self.conf,
             # verbose=False if terminal gets messy
         )
         
@@ -96,6 +119,12 @@ class YoloOrientationDetector(OrientationDetector):
                     kp_pts = kp.xy[0].tolist()
 
                     (head_x, head_y), (base_x, base_y) = kp_pts
+                    
+                    # Adjust coordinates back to original image space by adding crop offsets
+                    head_x += crop_images.X_MIN
+                    head_y += crop_images.Y_MIN
+                    base_x += crop_images.X_MIN
+                    base_y += crop_images.Y_MIN
 
                     head_coords = self.camera.last_image_get_xyz(head_x, head_y)
                     base_coords = self.camera.last_image_get_xyz(base_x, base_y)

@@ -4,8 +4,13 @@ from typing import List
 import cv2
 import numpy as np
 
+HEIGHT = 320
+WIDTH = 960
 Y_MIN, Y_MAX = 40, 360   # height = 320
 X_MIN, X_MAX = 650, 1610 # width = 960
+
+assert X_MIN + WIDTH == X_MAX
+assert Y_MIN + HEIGHT == Y_MAX
 
 VALID_EXTENSIONS = ('.png', '.jpg', '.jpeg', '.bmp', '.webp')
 

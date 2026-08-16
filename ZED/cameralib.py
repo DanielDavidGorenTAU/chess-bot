@@ -4,6 +4,7 @@ except ImportError:
     sl = None
 import cv2
 import os
+from math import hypot
 from datetime import datetime
 import numpy as np
 from common.typing import Vector
@@ -208,20 +209,40 @@ class Camera:
         return  head_point, base_point
 
     def last_image_get_xyz(self, x: float, y: float) -> Vector:
+        """
+        In the last image captured, try to find the 3D point corresponding to (x, y).
+        Failing that, try to find the nearest point (x+dx, y+dy) that can be converted to a 3D point
+        (with |dx| <= 5, |dy| <= 5).
+        Failing that too, raise an error.
+        """
+
         point_cloud = sl.Mat()
-        self.zed.retrieve_measure(
+        err = self.zed.retrieve_measure(
             point_cloud,
             sl.MEASURE.XYZ
         )
-        err, point3d = point_cloud.get_value(x, y)
         if err != sl.ERROR_CODE.SUCCESS:
-            raise Exception("Failed to get 3D point")
+            raise Exception("failed to retrieve point cloud")
 
-        X_, Y_, Z_ = point3d[:3]
-        if not np.isfinite(X_) or not np.isfinite(Y_) or not np.isfinite(Z_):
-            raise Exception("Invalid depth at this pixel")
+        max_d = 5
+        nearby_points = [
+            (x + dx, y + dy)
+            for dx in range(-max_d, max_d + 1)
+            for dy in range(-max_d, max_d + 1)
+        ]
+        nearby_points.sort(key=lambda p: hypot(p[0] - x, p[1] - y))
 
-        return X_, Y_, Z_
+        for (nearby_x, nearby_y) in nearby_points:
+            err, point3d = point_cloud.get_value(nearby_x, nearby_y)
+            if err != sl.ERROR_CODE.SUCCESS:
+                raise Exception("Failed to get 3D point")
+
+            point3d = tuple(point3d[:3])
+            if all(np.isfinite(coord) for coord in point3d):
+                print((x, y), (nearby_x, nearby_y), point3d)
+                return point3d
+
+        raise Exception(f"Invalid depth at pixel ({x}, {y})")
 
     def __enter__(self):
         status = self.zed.open(self.init_params)

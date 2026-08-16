@@ -4,7 +4,7 @@ from common.typing import Pos
 from common.utils import *
 from arm.chessbot import RobotHardware
 from arm.measurements import *
-from common.enums_and_dicts import Orientation
+from common.enums_and_dicts import Orientation, ColoredPieceType, PieceType
 
 class BoardSettingRobot(ABC):
 
@@ -75,9 +75,12 @@ class BoardSettingArm(BoardSettingRobot):
 
 
     def move_from_platform_to_target(self, target: str, type: PieceType, do_knight_correction: bool = True) -> bool:
+        if isinstance(type, ColoredPieceType):
+            type = type.piece_type
+
         # grip from the cube   
-        #               -0.01    
-        #               -0.01                                                      
+        #               -0.01
+        #               -0.01
         self.robot_hardware.set_gripper(HALF_OPENED, wait=False)
         self.robot_hardware.move_to(
             dx=-0.00,
