@@ -23,6 +23,10 @@ class PieceIngestionPipeline:
         base = pose.base
         orientation = pose.orientation
 
+        print(f"pixel head = {head}")
+        print(f"pixel base = {base}")
+        print(f"camera head = {self.robot.robot_hardware.camera_vector_to_robot_vector(head)}")
+        print(f"camera base = {self.robot.robot_hardware.camera_vector_to_robot_vector(base)}")
         # 2. Arm move piece to platform
         if not self.robot.move_piece_to_platform(
             self.robot.robot_hardware.camera_vector_to_robot_vector(head),
@@ -38,7 +42,7 @@ class PieceIngestionPipeline:
         target_square = self.placement_planner.get_targer_for_piece(piece_type)
 
         # 5. Move piece from platform to board
-        if not self.robot.move_from_platform_to_target(target_square, piece_type):
+        if not self.robot.move_from_platform_to_target(target_square, piece_type, orientation):
             raise RobotFailedException("Robot failed while moving piece from platform to target "+target_square)
 
         print(f"Placed {INT_TO_NAME[piece_type]} onto {target_square}")

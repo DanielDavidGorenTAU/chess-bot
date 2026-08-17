@@ -46,7 +46,9 @@ class BoardSettingArm(BoardSettingRobot):
         HEAD_BIAS = 0.6
         pickup_pos = weighted_avg(head_pos[:3], base_pos[:3], HEAD_BIAS)
         if is_standing:
-            pickup_pos = [*pickup_pos, *self.robot_hardware.down_orientation]
+            pickup_pos = [*pickup_pos[:2], self.robot_hardware.grip_height[PieceType.PAWN] + GRIP_RELEASE_HEIGHT, *self.robot_hardware.down_orientation]
+            if abs(head_pos[Y] - base_pos[Y]) > 0.02:
+                pickup_pos[Y] = base_pos[Y] - 0.0040
         else:
             pickup_pos = [pickup_pos[X], pickup_pos[Y],self.robot_hardware.table_height+0.005, *self.robot_hardware.get_rotated_tcp_orientation(Rz=drz+180)]
 
@@ -66,7 +68,12 @@ class BoardSettingArm(BoardSettingRobot):
 
         piece_height_worst_case = math.hypot(dx, dy, dz) * 1.4
         print(f"{dx=} {dy=} {dz=} {piece_height_worst_case=} {HEAD_BIAS=} {piece_height_worst_case*HEAD_BIAS=}")
-        self.robot_hardware.move_to(z=cube_pose[Z], dy=dy_alignment, dz=piece_height_worst_case * HEAD_BIAS)
+        
+        if is_standing:
+            self.robot_hardware.move_to(z=cube_pose[Z], dy=dy_alignment, dz=self.robot_hardware.grip_height[PieceType.PAWN] + GRIP_RELEASE_HEIGHT - self.robot_hardware.floor_height)
+        else:
+            self.robot_hardware.move_to(z=cube_pose[Z], dy=dy_alignment, dz=piece_height_worst_case * HEAD_BIAS)
+
         self.robot_hardware.set_gripper(open_by=GRIP_RELEASE_OFFSET)
 
         self.robot_hardware.move_to(cube_pose,z=self.robot_hardware.sky_height)
@@ -74,20 +81,18 @@ class BoardSettingArm(BoardSettingRobot):
         return True
 
 
-    def move_from_platform_to_target(self, target: str, type: PieceType, do_knight_correction: bool = True) -> bool:
+    def move_from_platform_to_target(self, target: str, type: PieceType, orientation: Orientation) -> bool:
         if isinstance(type, ColoredPieceType):
             type = type.piece_type
 
         # grip from the cube   
-        #               -0.01
-        #               -0.01
         self.robot_hardware.set_gripper(HALF_OPENED, wait=False)
         self.robot_hardware.move_to(
             dx=-0.00,
             z=cube_pose[Z] - self.robot_hardware.floor_height + self.robot_hardware.grip_height[type],
             orientation =
                 self.robot_hardware.get_rotated_tcp_orientation(Rz=90)
-                if do_knight_correction and type == PieceType.KNIGHT
+                if orientation = Orientation.STANDING and type == PieceType.KNIGHT
                 else None)
         self.robot_hardware.set_gripper(CLOSED) # grip the piece
         self.robot_hardware.move_to(dz=0.05) # raise the arm

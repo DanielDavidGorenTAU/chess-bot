@@ -43,4 +43,4 @@ def plot_detections(image_path, coord_file_path):
 
 # --- USAGE ---
 if __name__ == "__main__":
-    plot_detections("/home/checkmate/Documents/chess-bot/yolo/photos_game/00_20260813_193348_523.png", "/home/checkmate/Documents/chess-bot/yolo/predictions_game/00_20260813_193348_523.txt")
+    plot_detections("/home/checkmate/Documents/chess-bot/yolo/photos_game/00_20260817_220907_300.png", "/home/checkmate/Documents/chess-bot/yolo/predictions_game/00_20260817_220907_300.txt")

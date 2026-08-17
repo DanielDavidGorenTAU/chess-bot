@@ -1,14 +1,26 @@
 from abc import abstractmethod
-from common.enums_and_dicts import ColoredPieceType
+from common.enums_and_dicts import *
 from .vision_model import VisionModel
 from common.exceptions import YoloVisionException
 from typing import Optional
 from ultralytics import YOLO
 from ZED.cameralib import Camera
+import os
+import sys
+from PIL import Image
+import torch
+from torchvision import transforms
 
 
 DEFAULT_CONF = 0.5
 IMAGE_OUTPUT_DIR = "/home/checkmate/Documents/chess-bot/yolo/photos_platform"
+MODEL_PATH = "/home/checkmate/Documents/chess-bot/standalone_chess_model.pt"
+INFERENCE_TRANSFORM = transforms.Compose([
+    transforms.Grayscale(num_output_channels=3),
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+])
 
 class PlatformPieceClassifier(VisionModel):
     """
@@ -68,10 +80,58 @@ class ManualPieceClassifier(PlatformPieceClassifier):
 #### IF NEEDED ####
 class CNNPieceClassifier(PlatformPieceClassifier):
     """
-     CNN implementation for platform piece classification. 
+    CNN implementation for platform piece classification. 
     """
-    def __init__(self, model_path: str, camera: Optional[Camera] = None, conf: float = DEFAULT_CONF):
-            super().__init__(camera=camera, conf=conf)
+    def __init__(self, model_path: str = MODEL_PATH, camera: Optional[Camera] = None, conf: float = DEFAULT_CONF):
+        super().__init__(camera=camera, conf=conf)
+        self.model_path = model_path
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
+        # Load model once at startup into memory
+        self.model = torch.jit.load(self.model_path, map_location=self.device)
+        self.model.eval()
+
+    def crop_image(self, image_path: str, output_dir: str, x: int, y: int, width: int, height: int) -> bool:
+        image = Image.open(image_path).convert("RGB")
+
+        img_w, img_h = image.size
+
+        x0 = max(0, min(x, img_w - 1))
+        y0 = max(0, min(y, img_h - 1))
+        w = min(width, img_w - x0)
+        h = min(height, img_h - y0)
+
+        cropped = image.crop((x0, y0, x0 + w, y0 + h))
+
+        filename = os.path.basename(image_path)
+        output_path = os.path.join(output_dir, filename)
+
+        cropped.save(output_path)
+
+        return cropped
 
     def identify_piece(self, image_path: Optional[str] = None) -> ColoredPieceType:
-        return ColoredPieceType(-1)
+        image_path = self._resolve_image_path(image_path, IMAGE_OUTPUT_DIR)
+
+        # Run inference
+        image = Image.open(image_path).convert("RGB")
+        width, height = image.size
+        if width!=150 or height!=150:
+            image = self.crop_image(image_path=image_path, output_dir=IMAGE_OUTPUT_DIR, x=1460,  y=220, width=150,  height=150)
+        display_name = os.path.basename(image_path)
+
+        input_tensor = INFERENCE_TRANSFORM(image).unsqueeze(0).to(self.device)
+        with torch.no_grad():
+            outputs = self.model(input_tensor)
+            probs = torch.softmax(outputs, dim=1)
+            idx = outputs.argmax(dim=1).item()
+            conf_score = probs[0][idx].item()
+
+        print(f"Source: {display_name} | Prediction: {INT_TO_NAME[idx]} | Confidence: {conf_score * 100:.2f}%")
+
+        # Map integer index to ColoredPieceType expected by caller
+        return ColoredPieceType(idx)  # Convert to your enum/type as needed
+
+
+
+        

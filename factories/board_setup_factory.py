@@ -32,7 +32,7 @@ class BoardSetupFactory:
         if self.config.vision.manual_on_platform:
             return ManualPieceClassifier(self.camera)
         else:
-            return YOLOPieceClassifier(self.camera)
+            return CNNPieceClassifier(camera=self.camera)
 
     def _create_placement_planner(self) -> PlacementPlanner:
         return PlacementPlanner(self.config.game.initial_fen)

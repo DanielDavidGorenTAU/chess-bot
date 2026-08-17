@@ -126,6 +126,9 @@ class YoloOrientationDetector(OrientationDetector):
                     base_x += crop_images.X_MIN
                     base_y += crop_images.Y_MIN
 
+                    if class_id==1:
+                        head_y += 25
+
                     head_coords = self.camera.last_image_get_xyz(head_x, head_y)
                     base_coords = self.camera.last_image_get_xyz(base_x, base_y)
 
