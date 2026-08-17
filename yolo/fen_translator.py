@@ -59,7 +59,6 @@ class Translator(ABC):
         if self.flip:
             row = 7 - row
             col = 7 - col
-
         return row, col
 
     def _create_detected_grid(self, detections_file, corners_file, target_size=800):

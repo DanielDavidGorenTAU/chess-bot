@@ -41,6 +41,7 @@ class HumanMoveController:
         old_fen = board.fen()
         detections_file = self.yolo_model.predict(image_path=image_path)
         PerceptionState().set_latest_detections(detections_file)
+        print("####### ABOUT TO TRANSLATE MOVE#######")
         move_str = self.translator.translate_to_move(board, detections_file)
         if move_str=="":
             move_str = input("The translator wasn't able to understand the move. Input your move (UCI): ")

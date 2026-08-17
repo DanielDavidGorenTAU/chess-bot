@@ -37,7 +37,7 @@ class BoardSettingArm(BoardSettingRobot):
         # translate to robot coordinates
         head_pos = self.robot_hardware.normalize_pos(head_pos)
         base_pos = self.robot_hardware.normalize_pos(base_pos)
-
+        print(f"orientation: {orientation}, head: {head_pos}, base: {base_pos}")
         dx, dy, dz = [head_pos[i] - base_pos[i] for i in range(3)]
         drz = math.degrees(math.atan2(dx, dy))
         #elevation = math.degrees(math.atan2(dz, math.hypot(dx, dy)))

@@ -56,37 +56,37 @@ def reset_gripper(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT):
     sys.exit(0)
 
 def move_to_start_postion():
-    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
+    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_, start=False) as robot:
         robot.move_to(robot.start_position, z=robot.sky_height)
     sys.exit(0)
 
 def grip_close():
-    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
+    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_, start=False) as robot:
         robot.set_gripper(CLOSED)
     sys.exit(0)
 
 def grip_open():
-    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
+    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_, start=False) as robot:
         robot.set_gripper(OPENED)
     sys.exit(0)
 
 def print_position():
-    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
+    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_, start=False) as robot:
         print(robot.pose[:3])
     sys.exit(0)
 
 def align_position():
-    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
+    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_, start=False) as robot:
         robot.move_joint(BASE_EYAL, 1, 0.5)
     sys.exit(0)
 
 def get_grip():
-    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
+    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_, start=False) as robot:
         print(robot.get_gripper())
     sys.exit(0)
 
 def print_joints():
-    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_) as robot:
+    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_, start=False) as robot:
         print(list(robot.rtde_r.getActualQ()))
     sys.exit(0)
 
@@ -95,7 +95,7 @@ def print_joints():
 
 
 class RobotHardware(AbstractRobotHardware):
-    def __init__(self, robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, speed=0.5, acceleration=0.5, A1 = A1_, H8 = H8_, flip=False, log: TextIOBase = None):
+    def __init__(self, robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, speed=0.5, acceleration=0.5, A1 = A1_, H8 = H8_, flip=False, log: TextIOBase = None, start=False):
         super().__init__(log=log)
         self.robot_ip = robot_ip
         self.base_tcp_port = base_tcp_port
@@ -112,17 +112,7 @@ class RobotHardware(AbstractRobotHardware):
         self.grip_height = {}
         self.table_height = 0
         self.flip = flip
-
-    """
-    def flip_board_robot_view(self):
-        
-        Flips A1 <-> H8 if the we flip the sides and black side is near the camera
-        flip is False if robot is white, True if player is white 
-    
-        self.A1, self.H8 = self.H8, self.A1
-        self.calibrate_board_positions(self.A1, self.H8, flip=True)
-        self.create_physical_storage_positions(flip=True)
-    """
+        self.start = start
 
     @override
     def __enter__(self):
@@ -158,8 +148,11 @@ class RobotHardware(AbstractRobotHardware):
 
         # orientations
         rad = math.atan2(h8[1] - a1[1], h8[0] - a1[0])
-        extra_angle = 0 if flip else np.pi
-        self.down_orientation = [0, np.pi, rad-np.pi/4 + extra_angle]
+        #extra_angle = 0 if flip else np.pi
+        #self.down_orientation = [0, np.pi, rad-np.pi/4 + extra_angle]
+        rad = math.degrees(rad)
+        extra_angle = 0 if flip else 180
+        self.down_orientation = self.get_rotated_tcp_orientation([0, np.pi, 0], Rz=rad-45+extra_angle)
 
         self.floor_height = (h8[Z] + a1[Z]) / 2 + 0.0015 # offset
         self.table_height = self.floor_height + OFFSET_TO_TABLE_HEIGHT
@@ -169,9 +162,9 @@ class RobotHardware(AbstractRobotHardware):
 
         # pieces grip heights
         self.grip_height[PieceType.QUEEN] = self.floor_height + 0.04
-        self.grip_height[PieceType.PAWN] = self.floor_height + 0.025 # TODO (elad) check for 0.03?
+        self.grip_height[PieceType.PAWN] = self.floor_height + 0.025
         self.grip_height[PieceType.KING] = self.floor_height + 0.04
-        self.grip_height[PieceType.ROOK] = self.floor_height + 0.025 # TODO (elad) check for 0.03?
+        self.grip_height[PieceType.ROOK] = self.floor_height + 0.025 
         self.grip_height[PieceType.KNIGHT] = self.floor_height + 0.03
         self.grip_height[PieceType.BISHOP] = self.floor_height + 0.03
 
@@ -189,7 +182,8 @@ class RobotHardware(AbstractRobotHardware):
             self.start_position = self.move_on_chessboard(self.positions['a4'], right = -CELL_LENGTH/2, up = CELL_LENGTH/2)
         self.start_position[Z] = self.sky_height   
 
-        print(self.positions['a1'])
+        if self.start:
+            self.move_to(self.start_position)
         
     @override
     def __exit__(self, exc_type, exc_value, traceback):
@@ -343,7 +337,7 @@ class RobotHardware(AbstractRobotHardware):
         return list(map(float, R @ camera_vector + t)) + self.down_orientation
 
     def pick_up_dead_piece(self, type: PieceType = PieceType.QUEEN, state=None, end_pos=None):
-        ############################################################### add knight support
+        
         # get robot postions from the interactable camera
         base_point, head_point = get_base_and_head_camera_points()
         R, t = estimate_transform(camera_points, robot_points)
@@ -701,68 +695,28 @@ def get_head_camera_point():
 
 
 def main():
-    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_, speed=0.1) as robot:
+    with RobotHardware(robot_ip=ROBOT_IP, base_tcp_port=BASE_TCP_PORT, A1=A1_, H8=H8_, speed=0.1, flip=True) as robot:
        # מלך, מלכה, רץ, פרש, צריח, רגלי = king, queen, bishop, knight, rook, pawn
         print("starting session")
         #robot.rtde_c.moveJ(BASE_URI, 1, 0.5)
         #robot.move_to(robot.start_position, z=robot.sky_height)
-        #robot.move_to(robot.positions['b2'],z=robot.safe_height)
-        #pawn
-        #robot.set_gripper(grip_size[PieceType.PAWN] - GRIP_RELEASE_OFFSET, wait=False) #  open the gripper
-        #robot.move_to(robot.positions['b2'],z=robot.grip_height[PieceType.PAWN], orientation=robot.get_rotated_tcp_orientation(robot.positions['b2'],Rz=45))
-        #robot.set_gripper(134)
-        #robot.move_to(robot.move_on_chessboard(robot.pose, right=-0.5, up=-0.5))
-        #robot.set_gripper(CLOSED)
-
-        # knight left side
-        #robot.set_gripper(grip_size[PieceType.ROOK] - GRIP_RELEASE_OFFSET)
-        #robot.move_to(robot.positions['b2'],z=robot.safe_height, orientation=robot.get_rotated_tcp_orientation(robot.positions['b1'],Rz=45))
-        #robot.move_to(robot.move_on_chessboard(robot.pose, right=-0.5, up=-0.0))
-        #robot.set_gripper(140)
-        #robot.move_to(robot.move_on_chessboard(robot.pose, right=-0.5, up=-0.0))
-        #robot.move_to(z=robot.grip_height[PieceType.KNIGHT])
-        #robot.set_gripper(CLOSED)
-
-        #print(robot.normalize_pos(get_head_camera_point()))
         
-
-        #point = get_head_camera_point()
-
-        #print("point:", point)
-        #print("type:", type(point))
-
-        #print(robot.normalize_pos(point))
-        #robot.move_to(robot.normalize_pos(get_head_camera_point()))
-
-        #robot.pick_up_dead_piece(PieceType.PAWN, "lying", "c1")
-        #robot.move_to(cube_pose, dz = 0.11)
-        #robot.move_to(orientation = robot.get_rotated_tcp_orientation(Rx=85))
-
-        #robot.flip_board_robot_view()
-        #robot.mov_chess_piece(PieceType.QUEEN, 'f8', 'g7')
-        #robot.flip_board_robot_view()
-        #robot..move_on_chessboard(self.positions['h5'], right = CELL_LENGTH/2, up = -CELL_LENGTH/2)
-        #robot.move_to(A1_AYAL+ robot.down_orientation)
-        #robot.move_to(robot.positions['h5'])
-        robot.move_to(robot.positions['b2'], z=robot.grip_height[PieceType.KNIGHT]+0.00)
+        robot.move_to([-0.6410578917841263, -1.5520865652666966, -0.7541084012082035, -0.015330942915367159, 3.1415552459377003, -9.38749508460759e-19])
 
 
-        #robot.move_to(z=robot.safe_height)
-        #robot.move_to([-0.7012659839948736, -0.36316477753682014, -0.32982245547551975] + robot.down_orientation)
+        """
+         head: [-0.6410578917841263, -1.5520865652666966, -0.7541084012082035, -0.015330942915367159, 3.1415552459377003, -9.38749508460759e-19], 
+         base: [-0.49319955161245954, -0.5938128296175067, -0.2605815235558591, -0.015330942915367159, 3.1415552459377003, -9.38749508460759e-19]
+        """
 
-        #robot.move_to(z=robot.safe_height)
-        #robot.move_to([-0.5900482619985574, -0.3595256257140383, -0.32982245547551975] + robot.down_orientation)
+        #for i in range(4):
+        #    robot.move_to(z=robot.safe_height)
+        #    robot.move_to(robot_points[i].tolist() + robot.down_orientation)
 
-        #robot.move_to(z=robot.safe_height)
-
-        #robot.move_to([-0.6480715733896221, -0.37616930509489405, -0.32982245547551975] + robot.down_orientation)
-        
         #get_12_camera_points()
         
+        #robot.move_to(robot.normalize_pos(get_head_camera_point()))
         
-        #robot.move_to(robot.normalize_pos(get_head_camera_point().tolist()))
-        #robot.move_to([-0.7012659839948736, -0.36316477753682014, -0.2629104676755676] + robot.down_orientation)
-        #print(robot.get_gripper())
         #robot.move_to(robot.start_position, z=robot.sky_height)
         print("end of session")
 
@@ -796,4 +750,8 @@ if __name__ == "__main__":
     #robot.mov_chess_piece(PieceType.PAWN, "b1", "c3")
     #robot.move_and_capture_piece((PieceType.PAWN, "b2"), (PieceType.QUEEN,"c3"))
     #robot.pick_up_dead_piece(PieceType.QUEEN, "lying", "c1")
-    #robot.move_to([*get_head_camera_point()] + robot.down_orientation)
+    
+    # assert pyhsical positions of robots
+    #for i in range(4):
+    #    robot.move_to(z=robot.safe_height)
+    #    robot.move_to(robot_points[i].tolist() + robot.down_orientation)

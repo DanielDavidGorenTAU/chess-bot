@@ -44,7 +44,7 @@ class YoloOrientationDetector(OrientationDetector):
         camera: Optional[Camera] = None,
         model_path: str = MODEL_PATH,
         conf: float = DEFAULT_CONF,
-        output_dir: str = "/tmp/",
+        output_dir: str = PREDICTION_OUTPUT_DIR,
     ):
         """Initializes the YOLO Model wrapper for piece orientation."""
 

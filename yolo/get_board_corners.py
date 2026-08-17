@@ -44,4 +44,4 @@ def main(image_path="board.jpg", output_file="corners.json"):
         print(f"Error: Expected 4 points, but got {len(clicked_points)}.")
 
 if __name__ == "__main__":
-    main("/home/checkmate/Documents/chess-bot/yolo/photos_game/00_20260813_190641_402.png") 
+    main("/home/checkmate/Documents/chess-bot/yolo/photos_game/00_20260817_173326_164.png") 

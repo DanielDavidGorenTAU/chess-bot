@@ -36,7 +36,7 @@ class GameFactory:
         print(f"[Factory] Assembling Vision Pipeline with model '{self.config.vision.model_name}'")
         
         yolo_model = BoardPiecesDetector(model_name=self.config.vision.model_name, camera=self.camera)
-        flip = self.config.game.white_player == "human"
+        flip = self.config.game.white_player.lower() == "human"
         translator = BinaryToFenTranslator(flip=flip)
         advanced_model = BoardPiecesDetector(model_name=ADVANCED, camera=self.camera, optimize=True)
         

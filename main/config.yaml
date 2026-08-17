@@ -1,8 +1,8 @@
 game:
   run_board_setup: true
-  run_initial_detection: true
-  white_player: "robot"    # Options: "human", "robot"
-  black_player: "human"    # Options: "human", "robot"
+  run_initial_detection: false
+  white_player: "human"    # Options: "human", "robot"
+  black_player: "robot"    # Options: "human", "robot"
   white_name: "Human"
   black_name: "Stockfish Bot"
   initial_fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
@@ -13,6 +13,7 @@ robot:
   base_tcp_port: 63352
   speed: 0.3
   acceleration: 0.3
+  
 
 engine:
   is_mock: false
