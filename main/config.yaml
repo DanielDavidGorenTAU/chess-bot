@@ -1,8 +1,8 @@
 game:
-  run_board_setup: true
+  run_board_setup: false
   run_initial_detection: false
-  white_player: "human"    # Options: "human", "robot"
-  black_player: "robot"    # Options: "human", "robot"
+  white_player: "robot"    # Options: "human", "robot"
+  black_player: "human"    # Options: "human", "robot"
   white_name: "Human"
   black_name: "Stockfish Bot"
   initial_fen: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"

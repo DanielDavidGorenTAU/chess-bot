@@ -701,21 +701,16 @@ def main():
         #robot.rtde_c.moveJ(BASE_URI, 1, 0.5)
         #robot.move_to(robot.start_position, z=robot.sky_height)
         
-        #robot.move_to([-0.6410578917841263, -1.5520865652666966, -0.7541084012082035, -0.015330942915367159, 3.1415552459377003, -9.38749508460759e-19])
-
-
-        """
-         head: [-0.6410578917841263, -1.5520865652666966, -0.7541084012082035, -0.015330942915367159, 3.1415552459377003, -9.38749508460759e-19], 
-         base: [-0.49319955161245954, -0.5938128296175067, -0.2605815235558591, -0.015330942915367159, 3.1415552459377003, -9.38749508460759e-19]
-        """
+        
 
         #for i in range(4):
         #    robot.move_to(z=robot.safe_height)
         #    robot.move_to(robot_points[i].tolist() + robot.down_orientation)
+        #robot.move_to(z=robot.safe_height)
 
-        get_12_camera_points()
+        #get_12_camera_points()
         
-        #robot.move_to(robot.normalize_pos(get_head_camera_point()))
+        robot.move_to(robot.normalize_pos(get_head_camera_point()))
         
         #robot.move_to(robot.start_position, z=robot.sky_height)
         print("end of session")

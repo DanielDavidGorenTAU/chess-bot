@@ -92,8 +92,7 @@ class BoardSettingArm(BoardSettingRobot):
             z=cube_pose[Z] - self.robot_hardware.floor_height + self.robot_hardware.grip_height[type],
             orientation =
                 self.robot_hardware.get_rotated_tcp_orientation(Rz=90)
-                if orientation = Orientation.STANDING and type == PieceType.KNIGHT
-                else None)
+                if orientation == Orientation.STANDING and type == PieceType.KNIGHT else None)
         self.robot_hardware.set_gripper(CLOSED) # grip the piece
         self.robot_hardware.move_to(dz=0.05) # raise the arm
 

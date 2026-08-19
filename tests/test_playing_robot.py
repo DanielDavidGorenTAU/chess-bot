@@ -18,7 +18,7 @@ import random
 
 if __name__ == "__main__":
     
-    test = "random_storage_workflow"
+    test = "put_type_in_storage"
 
 
     if test == "castle":
@@ -168,7 +168,7 @@ if __name__ == "__main__":
 
     elif test == "random_storage_workflow":
         print("\n" + "="*40)
-        print("🎲 STARTING INITIAL FEN STORAGE WORKFLOW (5 CAPTURES -> 3 RETRIEVALS)")
+        print("STARTING INITIAL FEN STORAGE WORKFLOW (5 CAPTURES -> 3 RETRIEVALS)")
         print("="*40)
         
         with RobotHardware() as robot:
@@ -232,4 +232,34 @@ if __name__ == "__main__":
 
                 playing_arm.storage.print_state()
 
-            
+    elif test == "put_type_in_storage":
+        with RobotHardware(flip=True) as robot:
+            playing_arm = PlayingArm(robot)
+
+            # remove in capture line (# move) before testing
+            # change in config.yaml for white/black at human side
+
+            playing_arm.capture(from_square='a1', to_square='a1', remove_square='a1', moving_piece=PieceType.ROOK, captured_piece=PieceType.ROOK)
+            playing_arm.capture(from_square='a1', to_square='a1', remove_square='h1', moving_piece=PieceType.ROOK, captured_piece=PieceType.ROOK)
+
+            playing_arm.capture(from_square='a1', to_square='a1', remove_square='b1', moving_piece=PieceType.ROOK, captured_piece=PieceType.KNIGHT)
+            playing_arm.capture(from_square='a1', to_square='a1', remove_square='g1', moving_piece=PieceType.ROOK, captured_piece=PieceType.KNIGHT)
+        
+            playing_arm.capture(from_square='a1', to_square='a1', remove_square='c1', moving_piece=PieceType.ROOK, captured_piece=PieceType.BISHOP)
+            playing_arm.capture(from_square='a1', to_square='a1', remove_square='f1', moving_piece=PieceType.ROOK, captured_piece=PieceType.BISHOP)
+        
+            playing_arm.capture(from_square='a1', to_square='a1', remove_square='e1', moving_piece=PieceType.ROOK, captured_piece=PieceType.KING)
+            playing_arm.capture(from_square='a1', to_square='a1', remove_square='d1', moving_piece=PieceType.ROOK, captured_piece=PieceType.QUEEN)
+
+            playing_arm.capture(from_square='a1', to_square='a1', remove_square='a2', moving_piece=PieceType.ROOK, captured_piece=PieceType.PAWN)
+            playing_arm.capture(from_square='a1', to_square='a1', remove_square='b2', moving_piece=PieceType.ROOK, captured_piece=PieceType.PAWN)
+            playing_arm.capture(from_square='a1', to_square='a1', remove_square='c2', moving_piece=PieceType.ROOK, captured_piece=PieceType.PAWN)
+            playing_arm.capture(from_square='a1', to_square='a1', remove_square='d2', moving_piece=PieceType.ROOK, captured_piece=PieceType.PAWN)
+            playing_arm.capture(from_square='a1', to_square='a1', remove_square='e2', moving_piece=PieceType.ROOK, captured_piece=PieceType.PAWN)
+            playing_arm.capture(from_square='a1', to_square='a1', remove_square='f2', moving_piece=PieceType.ROOK, captured_piece=PieceType.PAWN)
+            playing_arm.capture(from_square='a1', to_square='a1', remove_square='g2', moving_piece=PieceType.ROOK, captured_piece=PieceType.PAWN)
+            playing_arm.capture(from_square='a1', to_square='a1', remove_square='h2', moving_piece=PieceType.ROOK, captured_piece=PieceType.PAWN)
+
+            robot.move_to(robot.start_position)
+        
+

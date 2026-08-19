@@ -166,26 +166,36 @@ class PlayingArm(PlayingRobot):
         # Hard exception: Knights should never rotate to avoid slipping from the gripper TODO (elad) delete
         #if piece_type and piece_type.lower() == 'knight':
         #    return 0.0
-
+        
         # Determine position relative to the center safe zone
-        is_right = dx > threshold
-        is_left = dx < -threshold
-        is_bottom = dy > threshold
-        is_top = dy < -threshold
+        if self.robot_hardware.flip:
+            is_right = dx > threshold
+            is_left = dx < -threshold
+            is_bottom = dy < -threshold
+            is_top = dy > threshold
+            print("fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
+        else:
+            is_right = dx < -threshold
+            is_left = dx > threshold
+            is_bottom = dy > threshold
+            is_top = dy < -threshold
+            print("lllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll")
+
+        print(f"is right{is_right}, is left {is_left}, is up {is_top}, is down {is_bottom}")
 
         # Corner checks (45 degrees rotation)
         if is_top and is_right:
-            return math.radians(45)
+            return 45
         elif is_bottom and is_left:
-            return math.radians(45)
+            return 45
         elif is_top and is_left:
-            return math.radians(-45)
+            return -45
         elif is_bottom and is_right:
-            return math.radians(-45)
+            return -45
         
         # Side checks (90 degrees rotation to avoid side collisions)
         elif is_left or is_right:
-            return math.radians(90)
+            return 90
         
         # Center, top, or bottom (0 degrees - default angle)
         else:
@@ -216,6 +226,9 @@ class PlayingArm(PlayingRobot):
     
             #if rz_rotation_start is None:
             rz = self._get_dynamic_yaw(dx, dy)
+
+            print(f"dx={dx} dy={dy} rz={rz}!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+            rz = 0
             if rz != 0:
                 start_pos[3:6] = robot.get_rotated_tcp_orientation(start_pos,Rz=rz)
             #if rz_rotation_end is not None:
@@ -225,14 +238,18 @@ class PlayingArm(PlayingRobot):
             if type is not PieceType.KNIGHT and rz != 0:
                 robot.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET,wait=False) 
             elif math.isclose(abs(rz), math.radians(45)):
-                robot.set_gripper(HALF_OPENED, wait=False) # TODO (elad) test smaller sizes
+                #robot.set_gripper(HALF_OPENED, wait=False) # TODO (elad) test smaller sizes
+                robot.set_gripper(grip_size[type] - GRIP_RELEASE_OFFSET,wait=False) 
             else: # 90 degrees knight
                 robot.set_gripper(HALF_OPENED, wait=False)
                 end_pos[3:6] = robot.get_rotated_tcp_orientation(end_pos,Rz=rz) # put it back straight
             
             # --- PICKUP FROM BOARD ---
-            bias = 0.7
-            start_pos = robot.move_on_chessboard(start_pos, right = bias * dx, up = bias * dy) # update deviation
+            bias = 0.8
+            direction = 1 if robot.flip else -1
+            start_pos[0] += direction * bias * dx  # Adjust X directly
+            start_pos[1] += -1 * direction * bias * dy  # Adjust Y directly
+            start_pos = robot.move_on_chessboard(start_pos)#, right = bias * dx, up = bias * dy) # update deviation
             robot.move_to(start_pos, z=robot.safe_height, speed=speed, acceleration=acceleration) 
             robot.move_to(z=robot.grip_height[type])
             robot.set_gripper(CLOSED) # grip the piece
@@ -244,6 +261,12 @@ class PlayingArm(PlayingRobot):
             robot.set_gripper(robot.get_gripper() - GRIP_RELEASE_OFFSET) # release the piece
             robot.move_to(z=robot.safe_height)
     
+
+            ##############################################################################33
+            print(f"Pre-offset start_pos: {start_pos[:2]}")
+            start_pos = robot.move_on_chessboard(start_pos, right=bias * dx, up=bias * dy)
+            print(f"Post-offset start_pos: {start_pos[:2]}")
+            #################################################################################
             if move_to_start:
                 robot.move_to(robot.start_position, z=robot.sky_height, speed=speed, acceleration=acceleration)
 
@@ -404,7 +427,7 @@ class PlayingArm(PlayingRobot):
 
         # --- PLACE IN STORAGE ---
         robot.move_to(end_pos, z=robot.safe_height, speed=speed)
-        robot.move_to(z=robot.grip_height[type] + OFFSET_TO_TABLE_HEIGHT)
+        robot.move_to(z=robot.grip_height[type] + 0.002)
         robot.set_gripper(open_by=GRIP_RELEASE_OFFSET)
         robot.move_to(z=robot.safe_height)
 
