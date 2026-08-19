@@ -126,6 +126,10 @@ class CNNPieceClassifier(PlatformPieceClassifier):
             probs = torch.softmax(outputs, dim=1)
             idx = outputs.argmax(dim=1).item()
             conf_score = probs[0][idx].item()
+        if conf_score<0.6:
+            #probably didn't see anything
+            print(f"Source: {display_name} | FAILED PREDICTION | Confidence: {conf_score * 100:.2f}%")
+            return None
 
         print(f"Source: {display_name} | Prediction: {INT_TO_NAME[idx]} | Confidence: {conf_score * 100:.2f}%")
 

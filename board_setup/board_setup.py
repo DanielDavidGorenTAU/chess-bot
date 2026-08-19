@@ -37,6 +37,8 @@ class PieceIngestionPipeline:
 
         # 3. Detect piece class on platform
         piece_type: ColoredPieceType = self.platform_classifier.identify_piece()
+        if piece_type is None:
+            return
 
         # 4. Decide where to put on (board or grave yard)
         target_square = self.placement_planner.get_targer_for_piece(piece_type)
