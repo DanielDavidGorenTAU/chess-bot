@@ -1,6 +1,6 @@
 from arm.board_setting_robot import BoardSettingRobot
-from yolo.orientation_detector import OrientationDetector
-from yolo.platform_piece_classifier import PlatformPieceClassifier
+from yolo.vision_inference.orientation_detector import OrientationDetector
+from yolo.vision_inference.platform_piece_classifier import PlatformPieceClassifier
 from .placement_planner import PlacementPlanner
 from common.exceptions import RobotFailedException
 from common.enums_and_dicts import INT_TO_NAME, ColoredPieceType

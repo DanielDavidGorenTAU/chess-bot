@@ -3,7 +3,7 @@ from typing import List, Any, Optional
 from .config import AppConfig
 from game.game import Game
 from factories.board_setup_factory import BoardSetupService
-from yolo.human_interpreter import HumanMoveController
+from yolo.processing.human_interpreter import HumanMoveController
 
 
 class ChessSession:

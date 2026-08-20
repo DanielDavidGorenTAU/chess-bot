@@ -1,5 +1,5 @@
 import chess
-from .board_pieces_detector import BoardPiecesDetector, AbsBoardDetector
+from ..vision_inference.board_pieces_detector import BoardPiecesDetector, AbsBoardDetector
 from .fen_translator import *
 from arm.StorageManager import StorageManager
 from common.utils import convert_fen_char_to_type_and_color

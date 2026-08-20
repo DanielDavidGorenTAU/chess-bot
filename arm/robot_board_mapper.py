@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 from .perception_state import PerceptionState
 
-from yolo.fen_translator import CORNERS_FILE
+from yolo.processing.fen_translator import CORNERS_FILE
 from .measurements import CELL_LENGTH
 
 class RobotBoardMapper:

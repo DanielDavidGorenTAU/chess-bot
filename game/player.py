@@ -1,7 +1,7 @@
 from chess import Board, Move
 from abc import ABC, abstractmethod
 from .reactions import ReactionWaiter, ConsoleEnterReaction
-from yolo.human_interpreter import HumanMoveController
+from yolo.processing.human_interpreter import HumanMoveController
 from .actions import ChessAction
 from .action_interpreter import ActionFactory
 from arm.playing_robot import PlayingRobot 

@@ -1,7 +1,7 @@
 from main.config import AppConfig
 from ZED.cameralib import Camera
-from yolo.orientation_detector import *
-from yolo.platform_piece_classifier import *
+from yolo.vision_inference.orientation_detector import *
+from yolo.vision_inference.platform_piece_classifier import *
 from arm.chessbot import RobotHardware
 from arm.board_setting_robot import BoardSettingRobot, BoardSettingArm
 from board_setup.board_setup import BoardSetupService, PieceIngestionPipeline
