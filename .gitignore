@@ -234,3 +234,5 @@ zed_platform_[0-9]/
 zed_platform_images/
 zed_platform_images_[0-9]/
 yolo/photos_setup/
+yolo/photos_platform/
+yolo/predictions_setup/
