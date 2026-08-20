@@ -1,7 +1,7 @@
 from typing import List, Any
-from main.config import AppConfig
+from src.main.config import AppConfig
 
-from ZED.cameralib import Camera
+from src.perception.ZED.cameralib import Camera
 from arm.chessbot import RobotHardware
 
 

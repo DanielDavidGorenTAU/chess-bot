@@ -9,8 +9,8 @@ if ROOT_DIR not in sys.path:
 
 from arm.playing_robot import PlayingArm
 from arm.chessbot import RobotHardware
-from game.actions import ChessAction
-from game.action_interpreter import ActionFactory
+from src.core_functionalities.game.actions import ChessAction
+from src.core_functionalities.game.action_interpreter import ActionFactory
 from common.enums_and_dicts import PieceType
 import random
 

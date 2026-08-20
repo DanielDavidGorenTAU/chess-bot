@@ -22,8 +22,8 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-from ZED.cameralib import Camera
-from ZED.crop_images import crop_carton_roi, X_MIN, Y_MIN
+from src.perception.ZED.cameralib import Camera
+from src.perception.ZED.crop_images import crop_carton_roi, X_MIN, Y_MIN
 
 
 def capture_frame_from_camera(camera) -> np.ndarray:

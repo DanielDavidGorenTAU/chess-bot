@@ -1,13 +1,13 @@
-from main.config import AppConfig
-from game.game import Game
-from game.player import Player, HumanPlayer, RobotPlayer
-from yolo.processing.human_interpreter import HumanMoveController
-from yolo.vision_inference.board_pieces_detector import BoardPiecesDetector, ADVANCED
-from yolo.processing.fen_translator import BinaryToFenTranslator  # or factory for translators
+from src.main.config import AppConfig
+from src.core_functionalities.game.game import Game
+from src.core_functionalities.game.player import Player, HumanPlayer, RobotPlayer
+from src.perception.yolo.processing.human_interpreter import HumanMoveController
+from src.perception.yolo.vision_inference.board_pieces_detector import BoardPiecesDetector, ADVANCED
+from src.perception.yolo.processing.fen_translator import BinaryToFenTranslator  # or factory for translators
 from arm.playing_robot import *
-from ZED.cameralib import Camera
+from src.perception.ZED.cameralib import Camera
 from arm.chessbot import RobotHardware
-from ChessLogic.engine import ChessEngine
+from chess_backbone.engine import ChessEngine
 from arm.StorageManager import StorageManager
 from arm.perception_state import PerceptionState
 

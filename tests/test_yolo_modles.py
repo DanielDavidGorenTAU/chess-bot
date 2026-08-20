@@ -5,12 +5,12 @@ import sys
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
-from yolo.vision_inference.platform_piece_classifier import *
+from src.perception.yolo.vision_inference.platform_piece_classifier import *
 
 
-from yolo.vision_inference.board_pieces_detector import BoardPiecesDetector
-from ZED.cameralib import Camera
-from yolo.vision_inference.orientation_detector import *
+from src.perception.yolo.vision_inference.board_pieces_detector import BoardPiecesDetector
+from src.perception.ZED.cameralib import Camera
+from src.perception.yolo.vision_inference.orientation_detector import *
 
 if __name__ == "__main__":
     image_path = "/home/checkmate/Documents/chess-bot/yolo/photos_game/00_20260813_194939_aaa.png"

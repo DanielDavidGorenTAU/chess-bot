@@ -1,8 +1,8 @@
-from main.config import AppConfig
-from ZED.cameralib import Camera
-from yolo.processing.human_interpreter import HumanMoveController
-from yolo.vision_inference.board_pieces_detector import *
-from yolo.processing.fen_translator import AdvancedToFenTranslator, BinaryToFenTranslator  
+from src.main.config import AppConfig
+from src.perception.ZED.cameralib import Camera
+from src.perception.yolo.processing.human_interpreter import HumanMoveController
+from src.perception.yolo.vision_inference.board_pieces_detector import *
+from src.perception.yolo.processing.fen_translator import AdvancedToFenTranslator, BinaryToFenTranslator  
 
 
 

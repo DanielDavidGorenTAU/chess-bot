@@ -1,9 +1,9 @@
 
 
 
-from yolo.processing.fen_translator import AdvancedToFenTranslator, BinaryToFenTranslator
-from yolo.vision_inference.board_pieces_detector import *
-from yolo.processing.human_interpreter import *
+from src.perception.yolo.processing.fen_translator import AdvancedToFenTranslator, BinaryToFenTranslator
+from src.perception.yolo.vision_inference.board_pieces_detector import *
+from src.perception.yolo.processing.human_interpreter import *
 
 if __name__ == "__main__":
     test1_path = "C:/Users/m1478/Downloads/test_trans/detections.txt"

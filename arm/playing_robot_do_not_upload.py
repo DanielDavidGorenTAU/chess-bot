@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Optional
 from common.enums_and_dicts import *
 from .chessbot import *
-from main.config import AppConfig
+from src.main.config import AppConfig
 from .StorageManager import StorageManager
 from .robot_board_mapper import RobotBoardMapper
 
