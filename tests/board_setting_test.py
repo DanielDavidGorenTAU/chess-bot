@@ -1,9 +1,9 @@
 from sys import stdout
 from common.utils import PieceType
 from common.enums_and_dicts import Orientation
-from arm.mock_robot_hardware import MockRobotHardware
-from arm.chessbot import RobotHardware
-from arm.board_setting_robot import BoardSettingArm
+from src.arm.hardware.mock_robot_hardware import MockRobotHardware
+from src.arm.chessbot import RobotHardware
+from src.arm.behaviors.board_setting_robot import BoardSettingArm
 
 
 if __name__ == "__main__":

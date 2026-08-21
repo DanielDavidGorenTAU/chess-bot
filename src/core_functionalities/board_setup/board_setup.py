@@ -1,4 +1,4 @@
-from arm.board_setting_robot import BoardSettingRobot
+from src.arm.behaviors.board_setting_robot import BoardSettingRobot
 from src.perception.yolo.vision_inference.orientation_detector import OrientationDetector
 from src.perception.yolo.vision_inference.platform_piece_classifier import PlatformPieceClassifier
 from .placement_planner import PlacementPlanner

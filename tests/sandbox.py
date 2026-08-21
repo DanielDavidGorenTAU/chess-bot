@@ -2,11 +2,11 @@ from sys import stdout
 import numpy as np
 from common.utils import OPENED, CLOSED
 from common.enums_and_dicts import PieceType, Orientation
-from arm.abstract_robot_hardware import AbstractRobotHardware
-from arm.mock_robot_hardware import MockRobotHardware
-from arm.chessbot import RobotHardware, get_base_and_head_camera_points, get_head_camera_point
-from arm.board_setting_robot import BoardSettingArm
-from arm.measurements import cube_pose
+from src.arm.hardware.abstract_robot_hardware import AbstractRobotHardware
+from src.arm.hardware.mock_robot_hardware import MockRobotHardware
+from src.arm.chessbot import RobotHardware, get_base_and_head_camera_points, get_head_camera_point
+from src.arm.behaviors.board_setting_robot import BoardSettingArm
+from src.arm.measurements import cube_pose
 
 import argparse
 import os

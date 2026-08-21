@@ -2,7 +2,7 @@ from typing import List, Any
 from src.main.config import AppConfig
 
 from src.perception.ZED.cameralib import Camera
-from arm.chessbot import RobotHardware
+from src.arm.chessbot import RobotHardware
 
 
 class HardwareFactory:

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Optional
-from arm.playing_robot import PlayingRobot
+from src.arm.behaviors.playing_robot import PlayingRobot
 from common.utils import *
 from common.enums_and_dicts import *
 

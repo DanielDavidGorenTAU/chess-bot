@@ -4,7 +4,7 @@ from .reactions import ReactionWaiter, ConsoleEnterReaction
 from src.perception.yolo.processing.human_interpreter import HumanMoveController
 from .actions import ChessAction
 from .action_interpreter import ActionFactory
-from arm.playing_robot import PlayingRobot 
+from src.arm.behaviors.playing_robot import PlayingRobot 
 from common.exceptions import RobotFailedException
 from chess_backbone.engine import ChessEngine
 

@@ -4,12 +4,12 @@ from src.core_functionalities.game.player import Player, HumanPlayer, RobotPlaye
 from src.perception.yolo.processing.human_interpreter import HumanMoveController
 from src.perception.yolo.vision_inference.board_pieces_detector import BoardPiecesDetector, ADVANCED
 from src.perception.yolo.processing.fen_translator import BinaryToFenTranslator  # or factory for translators
-from arm.playing_robot import *
+from src.arm.behaviors.playing_robot import *
 from src.perception.ZED.cameralib import Camera
-from arm.chessbot import RobotHardware
+from src.arm.chessbot import RobotHardware
 from chess_backbone.engine import ChessEngine
-from arm.StorageManager import StorageManager
-from arm.perception_state import PerceptionState
+from src.arm.state.storage_manager import StorageManager
+from src.arm.state.perception_state import PerceptionState
 
 class GameFactory:
     """Dependency Injector responsible for constructing all sub-systems."""

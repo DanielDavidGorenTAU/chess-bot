@@ -7,8 +7,8 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 
-from arm.playing_robot import PlayingArm
-from arm.chessbot import RobotHardware
+from src.arm.behaviors.playing_robot import PlayingArm
+from src.arm.chessbot import RobotHardware
 from src.core_functionalities.game.actions import ChessAction
 from src.core_functionalities.game.action_interpreter import ActionFactory
 from common.enums_and_dicts import PieceType

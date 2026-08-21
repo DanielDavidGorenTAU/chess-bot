@@ -1,10 +1,10 @@
 import chess
 from ..vision_inference.board_pieces_detector import BoardPiecesDetector, AbsBoardDetector
 from .fen_translator import *
-from arm.StorageManager import StorageManager
+from src.arm.state.storage_manager import StorageManager
 from common.utils import convert_fen_char_to_type_and_color
 from collections import Counter
-from arm.perception_state import PerceptionState
+from src.arm.state.perception_state import PerceptionState
 from typing import Optional
 
 class HumanMoveController:

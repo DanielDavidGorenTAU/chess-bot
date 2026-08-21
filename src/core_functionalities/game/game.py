@@ -1,6 +1,6 @@
 import chess
 from .player import Player
-from arm.perception_state import PerceptionState
+from src.arm.state.perception_state import PerceptionState
 
 DEFAULT_STARTING_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 
