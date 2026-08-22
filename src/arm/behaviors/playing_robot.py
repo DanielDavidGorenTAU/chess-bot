@@ -139,14 +139,14 @@ class PlayingArm(PlayingRobot):
                 
             # Check side neighbors for diagonal moves
             if is_diagonal:
-                neighbor_col1 = cur_col + step_col
+                neighbor_col1 = cur_col - step_col
                 neighbor_row1 = cur_row
                 if 0 <= neighbor_col1 <= 7 and 0 <= neighbor_row1 <= 7:
                     if board.piece_at(neighbor_row1 * 8 + neighbor_col1) is not None:
                         return False
                         
                 neighbor_col2 = cur_col
-                neighbor_row2 = cur_row + step_row
+                neighbor_row2 = cur_row - step_row
                 if 0 <= neighbor_col2 <= 7 and 0 <= neighbor_row2 <= 7:
                     if board.piece_at(neighbor_row2 * 8 + neighbor_col2) is not None:
                         return False
@@ -158,8 +158,8 @@ class PlayingArm(PlayingRobot):
         if is_diagonal:
             # Check adjacent columns/rows right next to the target landing square
             target_neighbors = [
-                (end_col + step_col, end_row),
-                (end_col, end_row + step_row)
+                (end_col - step_col, end_row),
+                (end_col, end_row - step_row)
             ]
             for n_col, n_row in target_neighbors:
                 if 0 <= n_col <= 7 and 0 <= n_row <= 7:
