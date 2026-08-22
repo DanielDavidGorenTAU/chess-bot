@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 from typing import Optional
 from common.enums_and_dicts import *
 from src.arm.chessbot import *
-from src.main.config import AppConfig
 from src.arm.state.storage_manager import StorageManager
 import math
 from src.arm.state.perception_state import PerceptionState
@@ -43,16 +42,11 @@ class PlayingArm(PlayingRobot):
     Real UR5E arm class for playing
     """
 
-    def __init__(self, robot_hardware: RobotHardware):
+    def __init__(self, robot_hardware: RobotHardware, human_color: str, robot_color: str):
         self.robot_hardware = robot_hardware
+        self.human_color = human_color
+        self.robot_color = robot_color
         self.storage = StorageManager() # call Singleton
-
-        config = AppConfig.load("/home/checkmate/Documents/chess-bot/main/config.yaml")
-        self.human_color = config.game.get_color_for("human")
-        self.robot_color = config.game.get_color_for("robot")
-
-        if self.human_color == "white": # flip the board
-            self.board_mapper.flip = True
     
     def _move_piece(self, type=None, start_pos=None, end_pos=None, speed=None, acceleration=None, rz_rotation_start=None, rz_rotation_end=None, move_to_start=True):
         """

@@ -255,7 +255,6 @@ class AbstractRobotHardware(ABC):
         self.move_to(end_pos, z=self.safe_height, speed=speed, acceleration=acceleration)
         self.move_to(z=self.grip_height[type] + GRIP_RELEASE_HEIGHT)
         
-        #self.set_gripper(self.get_gripper() - GRIP_RELEASE_OFFSET) # release the piece
         self.set_gripper(open_by=GRIP_RELEASE_OFFSET, speed=10) # release the piece
 
         # return to start postion
