@@ -211,7 +211,7 @@ During a game large pieces can block pawns, the model fails to detect them.
 
 **Solution:**
 
-We can almost always detect the exact move even if the pawn is blocked because those cases are disjoint assuming the players make only legal moves. The application prints a message whenever a pawn is blocked.
+1. We can almost always detect the exact move even if the pawn is blocked because those cases are disjoint assuming the players make only legal moves. The application prints a message whenever a pawn is blocked.
 However, if the block is not dealt with, it can move to the next turn and there will be unrecognizable, since our implementation can only catch blocking due to current move.
 ---
 
@@ -223,5 +223,5 @@ Sometimes the arm fails to grab a piece from cardboard, and the classifier outpu
 
 **Solution:**
 
-We noticed that in all this cases the difference in vonfidence was very high, so we added a behavior according to which: if the confidence of classifier is low, then we continue picking up new piece since it is likely never made it to the platform.
+1. We noticed that in all this cases the difference in vonfidence was very high, so we added a behavior according to which: if the confidence of classifier is low, then we continue picking up new piece since it is likely never made it to the platform.
 ---
