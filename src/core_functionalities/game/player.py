@@ -6,7 +6,7 @@ from .actions import ChessAction
 from .action_interpreter import ActionFactory
 from src.arm.behaviors.playing_robot import PlayingRobot 
 from common.exceptions import RobotFailedException
-from chess_backbone.engine import ChessEngine
+from src.core_functionalities.chess_backbone.engine import ChessEngine
 
 
 class Player(ABC):

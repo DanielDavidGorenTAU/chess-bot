@@ -27,7 +27,7 @@ if __name__ == "__main__":
             fen = "8/8/8/8/8/8/8/4K2R w - - 0 1"
             cur_move = "e1g1" #castle
             action_factory = ActionFactory()
-            playing_arm = PlayingArm(robot)
+            playing_arm = PlayingArm(robot, "black", "white")
             action: ChessAction = action_factory.interpret_action(cur_move, fen)
             if not action.execute_on_robot(playing_arm): 
                 print("failed to execute action on robot")
@@ -39,7 +39,7 @@ if __name__ == "__main__":
             fen = "2B5/3p4/8/8/8/8/8/8 b - - 0 1"
             cur_move = "d7c8q" #upgrade
             action_factory = ActionFactory()
-            playing_arm = PlayingArm(robot)
+            playing_arm = PlayingArm(robot, "white", "black")
             action: ChessAction = action_factory.interpret_action(cur_move, fen)
             if not action.execute_on_robot(playing_arm): 
                 print("failed to execute action on robot")
@@ -55,7 +55,7 @@ if __name__ == "__main__":
             moves = ["a1a2", "a2a3", "a3a4", "a4a5"]
             
             action_factory = ActionFactory()
-            playing_arm = PlayingArm(robot)
+            playing_arm = PlayingArm(robot, "black", "white")
             
             for move in moves:
                 print(f"\n[!] Executing move: {move}")
@@ -82,7 +82,7 @@ if __name__ == "__main__":
             moves = ["h1h2", "h2h3"]
             
             action_factory = ActionFactory()
-            playing_arm = PlayingArm(robot)
+            playing_arm = PlayingArm(robot, "black", "white")
             
             for move in moves:
                 print(f"\n[!] Executing move: {move}")
@@ -104,7 +104,7 @@ if __name__ == "__main__":
             # Setup: Missing 2 Black Knights from the standard starting layout (b8 and g8)
             fen = "r1bqkb1r/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
             
-            playing_arm = PlayingArm(robot)
+            playing_arm = PlayingArm(robot, "white", "black")
             
             # Use the method you moved inside StorageManager!
             playing_arm.storage.calibrate_storage_from_fen(fen)
@@ -139,7 +139,7 @@ if __name__ == "__main__":
             # Setup: Missing 4 Black Pawns from the starting layout (a7, b7, c7, d7 empty)
             fen = "rnbqkbnr/1111pppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" # (or standard FEN with missing pawns)
             
-            playing_arm = PlayingArm(robot)
+            playing_arm = PlayingArm(robot, "white", "black")
             
             # Calibrate storage based on the FEN
             playing_arm.storage.calibrate_storage_from_fen(fen)
@@ -172,7 +172,7 @@ if __name__ == "__main__":
         print("="*40)
         
         with RobotHardware() as robot:
-            playing_arm = PlayingArm(robot)
+            playing_arm = PlayingArm(robot, "white", "black")
             fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
             action_factory = ActionFactory()        
             stored_items = []
@@ -234,10 +234,14 @@ if __name__ == "__main__":
 
     elif test == "put_type_in_storage":
         with RobotHardware(flip=True) as robot:
-            playing_arm = PlayingArm(robot)
+
+            h_color = "white"
+            r_color = "black"
+
+            playing_arm = PlayingArm(robot, h_color, r_color)
 
             # remove in capture line (# move) before testing
-            # change in config.yaml for white/black at human side
+            # change h_color and r_color for white/black at human side
 
             playing_arm.capture(from_square='a1', to_square='a1', remove_square='a1', moving_piece=PieceType.ROOK, captured_piece=PieceType.ROOK)
             playing_arm.capture(from_square='a1', to_square='a1', remove_square='h1', moving_piece=PieceType.ROOK, captured_piece=PieceType.ROOK)

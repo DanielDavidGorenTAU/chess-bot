@@ -7,7 +7,7 @@ from src.perception.yolo.processing.fen_translator import BinaryToFenTranslator 
 from src.arm.behaviors.playing_robot import *
 from src.perception.ZED.cameralib import Camera
 from src.arm.chessbot import RobotHardware
-from chess_backbone.engine import ChessEngine
+from src.core_functionalities.chess_backbone.engine import ChessEngine
 from src.arm.state.storage_manager import StorageManager
 from src.arm.state.perception_state import PerceptionState
 
@@ -26,7 +26,9 @@ class GameFactory:
             return PlayingMock()
         else:
             print(f"[Factory] Injecting Real PlayingRobot")
-            return PlayingArm(self.robot)
+            human_color = self.config.game.get_color_for("human")
+            robot_color = self.config.game.get_color_for("robot")
+            return PlayingArm(self.robot, human_color, robot_color)
 
     def create_engine(self):
         return ChessEngine()
