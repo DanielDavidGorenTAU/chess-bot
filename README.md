@@ -9,12 +9,11 @@
 * [Overview](#overview)
 * [Requirements](#requirements)
 * [Configuration](#configuration)
-* [Board Calibration](#board-calibration)
+* [Calibration](#calibration)
 * [Running the Project](#running-the-project)
 * [Main Flows](#main-flows)
 * [Project Structure](#project-structure)
 * [Architecture](#architecture)
-* [Testing](#testing)
 * [Troubleshooting](#troubleshooting)
 
 ---
@@ -144,7 +143,7 @@ For each player make_move() is seperated into two parts:
 4. Placement Planner - Using the output of step 3 the application computes the target square of the current piece.
 5. Move the piece from the platform to the target piece on board (or storage). 
 
-## Project Structure - Directory Descriptions
+## Project Structure
 
 
 
@@ -179,133 +178,47 @@ Contains our source code for the chess logic and flows as described in Main Flow
 
 ### `[tests]/`
 
-Contains test files we used.
+Contains test scripts we used for checking each compoonent separetly.
 
 ---
 
-# Architecture
+## Architecture
 
-Describe the main components and how they communicate.
-
-```text
-                    ┌───────────────┐
-                    │     Game      │
-                    └───────┬───────┘
-                            │
-              ┌─────────────┴─────────────┐
-              │                           │
-       ┌──────▼──────┐             ┌──────▼──────┐
-       │ HumanPlayer │             │ RobotPlayer │
-       └──────┬──────┘             └──────┬──────┘
-              │                           │
-       ┌──────▼──────┐             ┌──────▼──────┐
-       │    Vision   │             │    Robot    │
-       └──────┬──────┘             └─────────────┘
-              │
-       ┌──────▼──────┐
-       │    Camera   │
-       └─────────────┘
-```
-
-Explain the responsibility of each major component:
-
-* **Game:** `[description]`
-* **Player:** `[description]`
-* **Vision:** `[description]`
-* **Camera:** `[description]`
-* **Robot:** `[description]`
-* **Chess Engine:** `[description]`
-* **Board Calibration:** `[description]`
-
----
-
-# Chess Engine
-
-Describe the chess engine configuration.
-
-### Engine
-
-`[ENGINE_NAME]`
-
-### Configuration
-
-```text
-Path: [PATH]
-Depth: [DEPTH]
-Skill Level: [LEVEL]
-```
-
-Explain how the engine is configured and how difficulty can be changed.
-
----
+A full diagram of the classes desgin and architecture can be find in the attached architecture.docx
 
 
 ---
 
-# Troubleshooting
+## Troubleshooting
 
-## `[Problem 1]`
+### `[Problem 1]`
 
 **Problem:**
 
-Describe the problem.
-
+The full class detection model we achieved makes mistakes. It is not reliable enough for using every turn.
 **Solution:**
 
-Describe how to fix it.
-
+1. We added a binary model that can distinguish only between colors. For comparing two boards and one move it's mostly enough.
+2. We added optimization to the YOLO classifier that changes classes to detected pieces until a legal board is achieved. Used mostly when detecting the initial board where the binary model cannot be used.
 ---
 
-## `[Problem 2]`
+### `[Problem 2]`
 
 **Problem:**
 
-Describe the problem.
-
+During a game large pieces can block pawns, the model fails to detect them. 
 **Solution:**
 
-Describe how to fix it.
-
+We can almost always detect the exact move even if the pawn is blocked because those cases are disjoint assuming the players make only legal moves. The application prints a message whenever a pawn is blocked.
+However, if the block is not dealt with, it can move to the next turn and there will be unrecognizable, since our implementation can only catch blocking due to current move.
 ---
 
-## `[Problem 3]`
+### `[Problem 3]`
 
 **Problem:**
 
-Describe the problem.
-
+Sometimes the arm fails to grab a piece from cardboard, and the classifier outputs a piece even if the platform is empty.
 **Solution:**
 
-Describe how to fix it.
-
+We noticed that in all this cases the difference in vonfidence was very high, so we added a behavior according to which: if the confidence of classifier is low, then we continue picking up new piece since it is likely never made it to the platform.
 ---
-
-# Development
-
-Describe anything useful for developers working on the project.
-
-### Adding a New Vision Model
-
-[Instructions]
-
-### Adding a New Robot
-
-[Instructions]
-
-### Running Without Hardware
-
-[Instructions]
-
-### Adding Tests
-
-[Instructions]
-
----
-
-# Authors
-
-* `[NAME]`
-
-# License
-
-`[LICENSE]`
